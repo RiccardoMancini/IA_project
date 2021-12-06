@@ -53,8 +53,8 @@ def take_attributes(file_path: str, n_attribute: int) -> list:
     return attr
 
 
-def write_attributes(filename: str, fp: str, n_attribute: int):
-    attr = take_attributes(fp, n_attribute)
+def write_attributes(filename: str, file_path: str, n_attribute: int):
+    attr = take_attributes(file_path, n_attribute)
     attribute = ''
     type_of_writing = 'a'
     if n_attribute == 0:
@@ -94,14 +94,26 @@ def write_attributes(filename: str, fp: str, n_attribute: int):
     f.close()
 
 
+def write_examples(pl_file: str, file_path: str):
+    ex_value = []
+    f = open(file_path)
+    csv_file = csv.reader(f)
+    for row in csv_file:
+        if csv_file.line_num == 1:
+            continue
+
+        """DA FINIRE"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+    f.close()
+    return ex_value
+
 if __name__ == '__main__':
     filepath = './heart.csv'
     pl_file = 'db_hearth.pl'
 
-
     """PRINT TO TERMINAL TEST"""
     print(take_attributesName(filepath))
-    #print(take_attributes(csv_f, 10))
+    # print(take_attributes(csv_f, 10))
 
     """WRITE A PROLOG DATABASE"""
     i = 0

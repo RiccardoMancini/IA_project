@@ -98,14 +98,27 @@ def write_examples(pl_file: str, file_path: str):
     ex_value = []
     f = open(file_path)
     csv_file = csv.reader(f)
+    f2 = open(pl_file, 'a')
     for row in csv_file:
         if csv_file.line_num == 1:
             continue
-
-        """DA FINIRE"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+        f2.write('e(' + ('Y' if row[11] == '1' else 'N') + ',[age = ' + row[0] + ','
+                                                     + ' sex = ' + '"' + row[1] + '"' + ','
+                                                     + ' chest_pain_type = ' + '"' + row[2] + '"' + ','
+                                                     + ' restingBP = ' + row[3] + ','
+                                                     + ' cholesterol = ' + row[4] + ','
+                                                     + ' fastingBS = ' + row[5] + ','
+                                                     + ' restingECG = ' + '"' + row[6] + '"' + ','
+                                                     + ' maxHR = ' + row[7] + ','
+                                                     + ' exercise_angina = ' + '"' + row[8] + '"' + ','
+                                                     + ' oldpeak = ' + row[9] + ','
+                                                     + ' ST_slope = ' + '"' + row[10] + '"' + ']).\n'
+                 )
 
     f.close()
+    f2.close()
     return ex_value
+
 
 if __name__ == '__main__':
     filepath = './heart.csv'
@@ -120,3 +133,4 @@ if __name__ == '__main__':
     while i <= 10:
         write_attributes(pl_file, filepath, i)
         i += 1
+    write_examples(pl_file, filepath)

@@ -79,7 +79,7 @@ def write_attributes(filename: str, file_path: str, n_attribute: int):
     elif n_attribute == 9:
         attribute = 'oldpeak'
     elif n_attribute == 10:
-        attribute = 'ST_slope'
+        attribute = 'st_slope'
 
     f = open(filename, type_of_writing)
     if isinstance(attr[0], int) or isinstance(attr[0], float):
@@ -102,7 +102,7 @@ def write_examples(pl_file: str, file_path: str):
     for row in csv_file:
         if csv_file.line_num == 1:
             continue
-        f2.write('e(' + ('Y' if row[11] == '1' else 'N') + ',[age = ' + row[0] + ','
+        f2.write('e(' + ('y' if row[11] == '1' else 'n') + ',[age = ' + row[0] + ','
                                                      + ' sex = ' + '"' + row[1] + '"' + ','
                                                      + ' chest_pain_type = ' + '"' + row[2] + '"' + ','
                                                      + ' restingBP = ' + row[3] + ','
@@ -112,7 +112,7 @@ def write_examples(pl_file: str, file_path: str):
                                                      + ' maxHR = ' + row[7] + ','
                                                      + ' exercise_angina = ' + '"' + row[8] + '"' + ','
                                                      + ' oldpeak = ' + row[9] + ','
-                                                     + ' ST_slope = ' + '"' + row[10] + '"' + ']).\n'
+                                                     + ' st_slope = ' + '"' + row[10] + '"' + ']).\n'
                  )
 
     f.close()

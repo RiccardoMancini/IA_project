@@ -1,5 +1,5 @@
 # IA_project
-### Nel branch Main mettiamo le modifiche dei file .pl, per il resto creiamo altri branch!
+### _NOTA: Nel branch Main mettiamo le modifiche dei file .pl, per il resto creiamo altri branch!_
 ### Alcuni link utili:
 
 _Link algoritmo id3: https://github.com/ignaciomosca/id3-prolog_

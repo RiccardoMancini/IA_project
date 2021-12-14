@@ -128,4 +128,3 @@ somma_pesata( Esempi, Att, [Val|Valori], SommaParziale, Somma) :-
 	somma_pesata(Esempi,Att,Valori,NuovaSommaParziale,Somma)
 	;
 	somma_pesata(Esempi,Att,Valori,SommaParziale,Somma). % nessun esempio soddisfa Att = Val
-

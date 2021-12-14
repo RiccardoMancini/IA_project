@@ -109,4 +109,23 @@ raggruppa(MiglioreAttributo):-
 
 %sceglie_attributo( Attributi, Esempi, MigliorAttributo )  :-
 
+somma_pesata( Esempi, Att, [Val|Valori], SommaParziale, Somma) :-
+	length(Esempi,N),                                            % quanti sono gli esempi
+	findall( C,						     % EsempiSoddisfatti: lista delle classi ..
+		 (member(e(C,Desc),Esempi) , soddisfa(Desc,[Att=Val])), % .. degli esempi (con ripetizioni)..
+		 EsempiSoddisfatti ),				     % .. per cui Att=Val
+	length(EsempiSoddisfatti, NVal),			     % quanti sono questi esempi
+	NVal > 0, !,                                                 % almeno uno!
+	findall(P,			           % trova tutte le P robabilità
+                (bagof(1,		           %
+                       member(_,EsempiSoddisfatti),
+                       L),
+                 length(L,NVC),
+                 P is NVC/NVal),
+                ClDst),
+        gini(ClDst,Gini),
+	NuovaSommaParziale is SommaParziale + Gini*NVal/N,
+	somma_pesata(Esempi,Att,Valori,NuovaSommaParziale,Somma)
+	;
+	somma_pesata(Esempi,Att,Valori,SommaParziale,Somma). % nessun esempio soddisfa Att = Val
 

@@ -30,7 +30,7 @@ raggruppa(A,P):-
     %scegli_attributo( Attributi, Esempi, MiglioreAttributo)
 
 %sceglie_attributo( Attributi, Esempi, MigliorAttributo )  :-
-prendi_prob(_,_,[],Ptot).
+
 prendi_prob( Esempi, Att, [Val|Valori], Ptot) :-                      % quanti sono gli esempi
 	findall( C,						     % EsempiSoddisfatti: lista delle classi ..
 		 (member(e(C,Desc),Esempi) , soddisfa(Desc,[Att=Val])), % .. degli esempi (con ripetizioni)..
@@ -44,7 +44,6 @@ prendi_prob( Esempi, Att, [Val|Valori], Ptot) :-                      % quanti s
                  length(L,NVC),
                  P is NVC/NVal),
                 Ptot),
-
         prendi_prob(Esempi,Att,Valori,Ptot)
         ;
         prendi_prob(Esempi,Att,Valori,Ptot). % nessun esempio soddisfa Att = Val

@@ -21,35 +21,44 @@ e(y,[age = 37, sex = "M", chest_pain_type = "ASY", restingBP = 140, cholesterol 
 e(n,[age = 48, sex = "F", chest_pain_type = "ATA", restingBP = 120, cholesterol = 284, fastingBS = 0, restingECG = "Normal", maxHR = 120, exercise_angina = "N", oldpeak = 0, st_slope = "Up"]).
 
 
-raggruppa(A,P):-
+raggruppa(P):-
     findall( e(Classe,Oggetto), e(Classe,Oggetto), Esempi),
     findall( Att,a(Att,_), Attributi),
     member(A,Attributi),
     a(A,AttVals),
-    prendi_prob(Esempi, A, AttVals, P).
+    prendi_prob(Esempi, A, AttVals, [], P).
     %scegli_attributo( Attributi, Esempi, MiglioreAttributo)
 
 %sceglie_attributo( Attributi, Esempi, MigliorAttributo )  :-
-prendi_prob(_,_,[],Ptot).
-prendi_prob( Esempi, Att, [Val|Valori], Ptot) :-                      % quanti sono gli esempi
+prendi_prob(_,_,[],Pbase,Pbase).
+prendi_prob( Esempi, Att, [Val|Valori], Pbase, Ptot) :-                      % quanti sono gli esempi
 	findall( C,						     % EsempiSoddisfatti: lista delle classi ..
 		 (member(e(C,Desc),Esempi) , soddisfa(Desc,[Att=Val])), % .. degli esempi (con ripetizioni)..
 		 EsempiSoddisfatti ),				     % .. per cui Att=Val
 	length(EsempiSoddisfatti, NVal),			     % quanti sono questi esempi
 	NVal > 0, !,                                                 % almeno uno!
 	findall(P,			           % trova tutte le P robabilità
-                (bagof(y,		           %
-                       member(_,EsempiSoddisfatti),
+                (bagof(1,		           %
+                       member(y,EsempiSoddisfatti),
                        L),
                  length(L,NVC),
                  P is NVC/NVal),
-                Ptot),
-
-        prendi_prob(Esempi,Att,Valori,Ptot)
+                Pp),
+        appendi(Pbase,Pp,Newbase),
+        prendi_prob(Esempi,Att,Valori,Newbase,Ptot)
         ;
-        prendi_prob(Esempi,Att,Valori,Ptot). % nessun esempio soddisfa Att = Val
+        prendi_prob(Esempi,Att,Valori,Pbase,Ptot).  %nessun esempio soddisfa Att = Val
 
 soddisfa(Oggetto,Congiunzione)  :-
 	\+ (member(Att=Val,Congiunzione),
 	    member(Att=ValX,Oggetto),
 	    ValX \== Val).
+
+appendi([],[],Ptotale) :-
+    append([],[0],Ptotale),!.
+appendi(Pbase,[],Ptotale) :-
+    append(Pbase,[0],Ptotale),!.
+appendi([],Pparziale,Ptotale) :-
+    append([],Pparziale,Ptotale),!.
+appendi(Pbase,Pparziale,Ptotale) :-
+    append(Pbase,Pparziale,Ptotale),!.

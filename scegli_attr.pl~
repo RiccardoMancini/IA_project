@@ -26,12 +26,12 @@ raggruppa(P):-
     findall( Att,a(Att,_), Attributi),
     member(A,Attributi),
     a(A,AttVals),
-    somma(Esempi, A, AttVals, 0, E).
+    prendi_prob(Esempi, A, AttVals, [], P).
+    %scegli_attributo( Attributi, Esempi, MiglioreAttributo)
 
-
-somma(_,_,[],Pbase,Pbase).
-somma( Esempi, Att, [Val|Valori], SommaParziale, Somma) :-                      % quanti sono gli esempi
-        length(Esempi, N),
+%sceglie_attributo( Attributi, Esempi, MigliorAttributo )  :-
+prendi_prob(_,_,[],Pbase,Pbase).
+prendi_prob( Esempi, Att, [Val|Valori], Pbase, Ptot) :-                      % quanti sono gli esempi
 	findall( C,						     % EsempiSoddisfatti: lista delle classi ..
 		 (member(e(C,Desc),Esempi) , soddisfa(Desc,[Att=Val])), % .. degli esempi (con ripetizioni)..
 		 EsempiSoddisfatti ),				     % .. per cui Att=Val
@@ -43,18 +43,11 @@ somma( Esempi, Att, [Val|Valori], SommaParziale, Somma) :-                      
                        L),
                  length(L,NVC),
                  P is NVC/NVal),
-                P),
-        %appendi(Pbase,Pp,Newbase),
-        entropy(Esempi,_,_,E),
-        NuovaSommaParziale is SommaParziale + E*NVal/N,
-        somma(Esempi,Att,Valori,NuovaSommaParziale,Somma)
+                Pp),
+        appendi(Pbase,Pp,Newbase),
+        prendi_prob(Esempi,Att,Valori,Newbase,Ptot)
         ;
-        somma(Esempi,Att,Valori,SommaParziale,Somma).  %nessun esempio soddisfa Att = Val
-
-
-entropy([], As, A,0):- member(A,As).
-entropy(_, As, A, 1.0):- not(member(A,As)).
-entropy(Ns, As, A, E):- member(A,As), a(A, AttVals), somma(Ns,A,AttVals,0,S), E is (-1*S).
+        prendi_prob(Esempi,Att,Valori,Pbase,Ptot).  %nessun esempio soddisfa Att = Val
 
 soddisfa(Oggetto,Congiunzione)  :-
 	\+ (member(Att=Val,Congiunzione),

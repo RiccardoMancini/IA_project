@@ -69,7 +69,7 @@ def write_attributes(filename: str, file_path: str, n_attribute: int):
     elif n_attribute == 4:
         attribute = 'cholesterol'
     elif n_attribute == 5:
-        attribute = 'fastingBP'
+        attribute = 'fastingBS'
     elif n_attribute == 6:
         attribute = 'restingECG'
     elif n_attribute == 7:
@@ -94,6 +94,26 @@ def write_attributes(filename: str, file_path: str, n_attribute: int):
     f.close()
 
 
+def discr_example(row_e: list) -> list:
+    """age"""
+    if int(row_e[0]) <= 18:
+        row_e[0] = 'first'
+    elif 18 < int(row_e[0]) <= 60:
+        row_e[0] = 'second'
+    elif int(row_e[0]) > 60:
+        row_e[0] = 'third'
+    """restingBP"""
+    if int(row_e[3]) < 120:
+        row_e[3] = 'optimal'
+    elif 120 <= int(row_e[3]) < 140:
+        row_e[3] = 'normal/high'
+    elif 140 <= int(row_e[3]) < 160:
+        row_e[3] = 'high'
+    elif int(row_e[3]) >= 160:
+        row_e[3] = 'very high'
+    return row_e
+
+
 def write_examples(pl_file: str, file_path: str):
     ex_value = []
     f = open(file_path)
@@ -102,17 +122,22 @@ def write_examples(pl_file: str, file_path: str):
     for row in csv_file:
         if csv_file.line_num == 1:
             continue
-        f2.write('e(' + ('y' if row[11] == '1' else 'n') + ',[age = ' + row[0] + ','
-                                                     + ' sex = ' + '"' + row[1] + '"' + ','
-                                                     + ' chest_pain_type = ' + '"' + row[2] + '"' + ','
-                                                     + ' restingBP = ' + row[3] + ','
-                                                     + ' cholesterol = ' + row[4] + ','
-                                                     + ' fastingBS = ' + row[5] + ','
-                                                     + ' restingECG = ' + '"' + row[6] + '"' + ','
-                                                     + ' maxHR = ' + row[7] + ','
-                                                     + ' exercise_angina = ' + '"' + row[8] + '"' + ','
-                                                     + ' oldpeak = ' + row[9] + ','
-                                                     + ' st_slope = ' + '"' + row[10] + '"' + ']).\n'
+        #tolgo gli esempi con valori a 0
+        if row[3] == '0' or row[4] == '0':
+            continue
+        row_d = discr_example(row)
+        print(row_d)
+        f2.write('e(' + ('y' if row_d[11] == '1' else 'n') + ',[age = ' + row_d[0] + ','
+                 + ' sex = ' + '"' + row_d[1] + '"' + ','
+                 + ' chest_pain_type = ' + '"' + row_d[2] + '"' + ','
+                 + ' restingBP = ' + row_d[3] + ','
+                 + ' cholesterol = ' + row_d[4] + ','
+                 + ' fastingBS = ' + row_d[5] + ','
+                 + ' restingECG = ' + '"' + row_d[6] + '"' + ','
+                 + ' maxHR = ' + row_d[7] + ','
+                 + ' exercise_angina = ' + '"' + row_d[8] + '"' + ','
+                 + ' oldpeak = ' + row_d[9] + ','
+                 + ' st_slope = ' + '"' + row_d[10] + '"' + ']).\n'
                  )
 
     f.close()

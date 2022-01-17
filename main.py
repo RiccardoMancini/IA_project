@@ -39,17 +39,21 @@ def take_attributes(file_path: str, n_attribute: int) -> list:
         if row[n_attribute] not in attr:
             attr.append(row[n_attribute])
     f.close()
+
     if n_attribute == 5:
         m = map(int, attr)
         attr = list(m)
-    if n_attribute == 0 or n_attribute == 3 or n_attribute == 4 or n_attribute == 7 or n_attribute == 9:
-        if n_attribute == 9:
-            m = map(float, attr)
-        else:
-            m = map(int, attr)
-        v = list(m)
-        order_attr = bubbleSort(v)
-        return order_attr
+    if n_attribute == 0:
+        attr = ["First", "Second", "Third"]
+    if n_attribute == 3:
+        attr = ["Optimal", "Normal/high", "High", "Very high"]
+    if n_attribute == 4:
+        attr = ["Desiderable", "Moderately high", "Extremely high"]
+    if n_attribute == 7:
+        attr = [1, 2, 3, 4]
+    if n_attribute == 9:
+        attr = ["Low risk", "Normal risk", "High risk"]
+
     return attr
 
 
@@ -97,20 +101,48 @@ def write_attributes(filename: str, file_path: str, n_attribute: int):
 def discr_example(row_e: list) -> list:
     """age"""
     if int(row_e[0]) <= 18:
-        row_e[0] = 'first'
+        row_e[0] = 'First'
     elif 18 < int(row_e[0]) <= 60:
-        row_e[0] = 'second'
+        row_e[0] = 'Second'
     elif int(row_e[0]) > 60:
-        row_e[0] = 'third'
+        row_e[0] = 'Third'
+
     """restingBP"""
     if int(row_e[3]) < 120:
-        row_e[3] = 'optimal'
+        row_e[3] = 'Optimal'
     elif 120 <= int(row_e[3]) < 140:
-        row_e[3] = 'normal/high'
+        row_e[3] = 'Normal/high'
     elif 140 <= int(row_e[3]) < 160:
-        row_e[3] = 'high'
+        row_e[3] = 'High'
     elif int(row_e[3]) >= 160:
-        row_e[3] = 'very high'
+        row_e[3] = 'Very high'
+
+    """cholesterol"""
+    if int(row_e[4]) < 200:
+        row_e[4] = 'Desiderable'
+    elif 200 <= int(row_e[4]) < 240:
+        row_e[4] = 'Moderately high'
+    elif int(row_e[4]) >= 240:
+        row_e[4] = 'Extremely high'
+
+    """maxHR"""
+    if int(row_e[7]) < 100:
+        row_e[7] = '1'
+    elif 100 <= int(row_e[7]) < 130:
+        row_e[7] = '2'
+    elif 130 <= int(row_e[7]) < 160:
+        row_e[7] = '3'
+    elif int(row_e[7]) >= 160:
+        row_e[7] = '4'
+
+    """oldpeak"""
+    if float(row_e[9]) < 0.5:
+        row_e[9] = 'Low risk'
+    elif 0.5 <= float(row_e[9]) < 1.5:
+        row_e[9] = 'Normal risk'
+    elif float(row_e[9]) >= 1.5:
+        row_e[9] = 'High risk'
+
     return row_e
 
 
@@ -122,21 +154,21 @@ def write_examples(pl_file: str, file_path: str):
     for row in csv_file:
         if csv_file.line_num == 1:
             continue
-        #tolgo gli esempi con valori a 0
+        # tolgo gli esempi con valori a 0
         if row[3] == '0' or row[4] == '0':
             continue
         row_d = discr_example(row)
         print(row_d)
-        f2.write('e(' + ('y' if row_d[11] == '1' else 'n') + ',[age = ' + row_d[0] + ','
+        f2.write('e(' + ('y' if row_d[11] == '1' else 'n') + ',[age = ' + '"' + row_d[0] + '"' + ','
                  + ' sex = ' + '"' + row_d[1] + '"' + ','
                  + ' chest_pain_type = ' + '"' + row_d[2] + '"' + ','
-                 + ' restingBP = ' + row_d[3] + ','
-                 + ' cholesterol = ' + row_d[4] + ','
+                 + ' restingBP = ' + '"' + row_d[3] + '"' + ','
+                 + ' cholesterol = ' + '"' + row_d[4] + '"' + ','
                  + ' fastingBS = ' + row_d[5] + ','
                  + ' restingECG = ' + '"' + row_d[6] + '"' + ','
                  + ' maxHR = ' + row_d[7] + ','
                  + ' exercise_angina = ' + '"' + row_d[8] + '"' + ','
-                 + ' oldpeak = ' + row_d[9] + ','
+                 + ' oldpeak = ' + '"' + row_d[9] + '"' + ','
                  + ' st_slope = ' + '"' + row_d[10] + '"' + ']).\n'
                  )
 

@@ -177,17 +177,35 @@ def write_examples(pl_file: str, file_path: str):
     return ex_value
 
 
+def create_testset(file: str):
+    reading_file = open(file, "r")
+    new_file_content = ""
+    for line in reading_file:
+        stripped_line = line.strip()
+        new_line = stripped_line.replace("e(", "s(")
+        new_file_content += new_line + "\n"
+    reading_file.close()
+
+    writing_file = open(file, "w")
+    writing_file.write(new_file_content)
+    writing_file.close()
+
+
 if __name__ == '__main__':
     filepath = './heart.csv'
     pl_file = 'db_hearth.pl'
+    testset_path = './testset.txt'
 
     """PRINT TO TERMINAL TEST"""
-    print(take_attributesName(filepath))
-    # print(take_attributes(csv_f, 10))
+    """print(take_attributesName(filepath))
+    # print(take_attributes(csv_f, 10))"""
 
     """WRITE A PROLOG DATABASE"""
-    i = 0
+    """i = 0
     while i <= 10:
         write_attributes(pl_file, filepath, i)
         i += 1
-    write_examples(pl_file, filepath)
+    write_examples(pl_file, filepath)"""
+
+    """CHANGE e(..) in s(..) IN TEST-SET"""
+    create_testset(testset_path)

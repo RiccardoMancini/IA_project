@@ -91,9 +91,7 @@ mostratutto([V:T|C],I) :-
 	mostra(T,I1),
 	mostratutto(C,I).
 
-classifica(Oggetto,nc,t(Att,Valori)) :- % dato t(+Att,+Valori), Oggetto è della Classe
-	member(Att=Val,Oggetto),  % se Att=Val è elemento della lista Oggetto
-        member(Val:null,Valori). % e Val:null è in Valori
+
 
 classifica(Oggetto,Classe,t(Att,Valori)) :- % dato t(+Att,+Valori), Oggetto è della Classe
 	member(Att=Val,Oggetto),  % se Att=Val è elemento della lista Oggetto
@@ -137,11 +135,6 @@ valuta(Albero,[n/Oggetto|Coda],VN,VNA,VP,VPA,FN,FNA,FP,FPA,NC,NCA) :-
 	classifica(Oggetto,y,Albero), !, % prevede erroneamente sopravvivenza
 	FPA1 is FPA + 1,
 	valuta(Albero,Coda,VN,VNA,VP,VPA,FN,FNA,FP,FPA1,NC,NCA).
-
-valuta(Albero,[_/Oggetto|Coda],VN,VNA,VP,VPA,FN,FNA,FP,FPA,NC,NCA) :- % non classifica
-	classifica(Oggetto,nc,Albero), !, % non classificato
-	NCA1 is NCA + 1,
-	valuta(Albero,Coda,VN,VNA,VP,VPA,FN,FNA,FP,FPA,NC,NCA1).
 
 stampa_albero:-
     alb(Albero),

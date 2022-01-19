@@ -19,7 +19,11 @@ induce_albero( Attributi, Esempi, t(Attributo,SAlberi) ) :-
 	a( Attributo, Valori ),
 	induce_alberi( Attributo, Valori, Rimanenti, Esempi, SAlberi).
 induce_albero( _, Esempi, l(Classi)) :-
-	findall( Classe, member(e(Classe,_),Esempi), Classi).
+	findall( Classe, member(e(Classe,_),Esempi), Classi),
+	length(Classi,N),
+	findall(1, member(n,Classi), Negativi),
+	length(Negativi, NN),
+	conta_classi(N,NN,Classi).
 
 minore_attributo( Attributi, Esempi, MigliorAttributo )  :-
 	setof( Sum/A,
@@ -66,6 +70,8 @@ induce_alberi(Att,[Val1|Valori],AttRimasti,Esempi,[Val1:Alb1|Alberi])  :-
 	induce_albero(AttRimasti,SottoinsiemeEsempi,Alb1),
 	induce_alberi(Att,Valori,AttRimasti,Esempi,Alberi).
 
+% Sottoinsieme � il sottoinsieme di esempi che soddisfa la condizione
+% attributo=valore
 attval_subset(AttributoValore,Esempi,Sottoinsieme) :-
 	findall(e(C,O),(member(e(C,O),Esempi),soddisfa(O,[AttributoValore])),Sottoinsieme).
 
@@ -91,7 +97,9 @@ mostratutto([V:T|C],I) :-
 	mostra(T,I1),
 	mostratutto(C,I).
 
-
+classifica(Oggetto,nc,t(Att,Valori)) :- % dato t(+Att,+Valori), Oggetto è della Classe
+	member(Att=Val,Oggetto),  % se Att=Val è elemento della lista Oggetto
+        member(Val:null,Valori). % e Val:null è in Valori
 
 classifica(Oggetto,Classe,t(Att,Valori)) :- % dato t(+Att,+Valori), Oggetto è della Classe
 	member(Att=Val,Oggetto),  % se Att=Val è elemento della lista Oggetto
@@ -103,6 +111,14 @@ classifica(Oggetto,Classe,t(Att,Valori)) :-
 	member(Val:t(AttFiglio,ValoriFiglio),Valori),
 	classifica(Resto,Classe,t(AttFiglio,ValoriFiglio)).
 
+conta_classi(N,NN,y) :-
+	NN < N/2.
+
+conta_classi(N,NN,n) :-
+	NN > N/2.
+
+conta_classi(N,NN,nc) :-
+	NN =:= N/2.
 
 matrice_confusione :-
 	alb(Albero),
@@ -135,6 +151,11 @@ valuta(Albero,[n/Oggetto|Coda],VN,VNA,VP,VPA,FN,FNA,FP,FPA,NC,NCA) :-
 	classifica(Oggetto,y,Albero), !, % prevede erroneamente sopravvivenza
 	FPA1 is FPA + 1,
 	valuta(Albero,Coda,VN,VNA,VP,VPA,FN,FNA,FP,FPA1,NC,NCA).
+
+valuta(Albero,[_/Oggetto|Coda],VN,VNA,VP,VPA,FN,FNA,FP,FPA,NC,NCA) :- % non classifica
+	classifica(Oggetto,nc,Albero), !, % non classificato
+	NCA1 is NCA + 1,
+	valuta(Albero,Coda,VN,VNA,VP,VPA,FN,FNA,FP,FPA,NC,NCA1).
 
 stampa_albero:-
     alb(Albero),

@@ -157,3 +157,13 @@ valuta(Albero,[_/Oggetto|Coda],VN,VNA,VP,VPA,FN,FNA,FP,FPA,NC,NCA) :- % non clas
 	NCA1 is NCA + 1,
 	valuta(Albero,Coda,VN,VNA,VP,VPA,FN,FNA,FP,FPA,NC,NCA1).
 
+stampa_albero:-
+    alb(Albero),
+    open('output.txt',write,Out),
+    write(Out,Albero),
+    close(Out).
+
+n_foglie(N):-
+    alb(Albero),
+    findall(1,member(t(_,[_]),Albero),Foglie),
+    length(Foglie,N).

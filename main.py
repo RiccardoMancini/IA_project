@@ -1,5 +1,6 @@
 import os
 import csv
+import random
 
 
 def bubbleSort(v):
@@ -197,13 +198,24 @@ def manipolate_examples(file: str, perc: int):
     reading_file.close()
     n_lines = len(lines)
     n_tests = (n_lines * perc) / 100
-    i = 0
     new_file_content = ""
-    for line in lines[:int(n_tests)]:
-        new_file_content += line
-        del lines[i]
+
+    # sequential choice of lines that will be part of Test set
+    i = 0
+    while i < int(n_tests):
+        new_file_content += lines[0]
+        del lines[0]
         i += 1
 
+    """j = 0
+    selected_lines = random.sample(range(746), int(n_tests))
+    print(selected_lines)
+    while j < int(n_tests):
+        print(selected_lines[j])
+        new_file_content += lines[selected_lines[j]]
+        j += 1"""
+
+    #print(new_file_content.splitlines())
     # write training set
     writing_train = open('db_heart_training.pl', "w")
     for line in lines:
@@ -235,4 +247,7 @@ if __name__ == '__main__':
     write_examples(pl_ex_file, filepath)"""
 
     """CREATE TRAINING SET AND TEST SET"""
-    manipolate_examples(pl_ex_file, 15)
+    manipolate_examples(pl_ex_file, 1)
+    """line = 'e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).'
+    lines = ['e(y,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).', 'ciao', 'e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).']
+    print(line not in lines)"""

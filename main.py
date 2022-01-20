@@ -150,7 +150,7 @@ def write_examples(pl_file: str, file_path: str):
     ex_value = []
     f = open(file_path)
     csv_file = csv.reader(f)
-    f2 = open(pl_file, 'a')
+    f2 = open(pl_file, 'w')
     for row in csv_file:
         if csv_file.line_num == 1:
             continue
@@ -191,21 +191,48 @@ def create_testset(file: str):
     writing_file.close()
 
 
+def manipolate_examples(file: str, perc: int):
+    reading_file = open(file, "r")
+    lines = reading_file.readlines()
+    reading_file.close()
+    n_lines = len(lines)
+    n_tests = (n_lines * perc) / 100
+    i = 0
+    new_file_content = ""
+    for line in lines[:int(n_tests)]:
+        new_file_content += line
+        del lines[i]
+        i += 1
+
+    # write training set
+    writing_train = open('db_heart_training.pl', "w")
+    for line in lines:
+        writing_train.write(line)
+    writing_train.close()
+
+    # write test set
+    writing_test = open('db_heart_test.pl', "w")
+    writing_test.write(new_file_content)
+    writing_test.close()
+
+    # change every examples e(...) in test with s(...)
+    create_testset('db_heart_test.pl')
+
+
 if __name__ == '__main__':
     filepath = './heart.csv'
-    pl_file = 'db_hearth.pl'
-    testset_path = './testset.txt'
+    pl_attribute_file = 'db_heart_attributes.pl'
+    pl_ex_file = 'db_heart_examples.pl'
 
     """PRINT TO TERMINAL TEST"""
-    """print(take_attributesName(filepath))
-    # print(take_attributes(csv_f, 10))"""
+    """print(take_attributesName(filepath))"""
 
     """WRITE A PROLOG DATABASE"""
     """i = 0
     while i <= 10:
-        write_attributes(pl_file, filepath, i)
+        write_attributes(pl_attribute_file, filepath, i)
         i += 1
-    write_examples(pl_file, filepath)"""
+    write_examples(pl_ex_file, filepath)"""
 
-    """CHANGE e(..) in s(..) IN TEST-SET"""
-    create_testset(testset_path)
+    """CREATE TRAINING SET AND TEST SET"""
+    manipolate_examples(pl_ex_file, 15)

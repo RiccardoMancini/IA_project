@@ -1,7 +1,7 @@
 :- dynamic alb/1.
-:- consult(db_heart_attributes).
-:- consult(db_heart_training).
-:- consult(db_heart_test).
+:- consult(db_hearth_attributes).
+:- consult(db_hearth_training).
+:- consult(db_hearth_test).
 
 induce_albero( Albero ) :-
 	findall( e(Classe,Oggetto), e(Classe,Oggetto), Esempi),

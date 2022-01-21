@@ -10,8 +10,21 @@ persone_malate(N):-
     findall(1, e(y,_), Malati),
     length(Malati, N).
 
-col_Ex_high(N):-
-    findall(1, e(_,[_,_,_])).
+colesterolo(Val,N):-
+    findall(1, e(_,[_,_,_,_,cholesterol = Val|_]),Lista),
+    length(Lista,N).
+
+prob_col_Val(Val):COL/N:-
+    colesterolo(Val,COL),
+    numero_persone(N).
+
+%col_Ex_high(N):-
+ %   findall(1, e(_,[_,_,_,_,cholesterol = "Extremely high"|_]),ColAlto),
+ %  length(ColAlto,N).
+
+%prob_col_Ex_high:CH/N:-
+ %   col_Ex_high(CH),
+ %   numero_persone(N).
 
 prob_malato:PM/N:-
     persone_malate(PM),

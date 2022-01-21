@@ -10,7 +10,7 @@ persone_malate(N):-
     findall(1, e(y,_), Malati),
     length(Malati, N).
 
-colesterolo(Val,N):-
+colesterolo(Val,N):- %esempio: prob(prob_col_Val("Extremely high"),P).
     findall(1, e(_,[_,_,_,_,cholesterol = Val|_]),Lista),
     length(Lista,N).
 

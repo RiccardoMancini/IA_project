@@ -247,7 +247,7 @@ if __name__ == '__main__':
     write_examples(pl_ex_file, filepath)"""
 
     """CREATE TRAINING SET AND TEST SET"""
-    manipolate_examples(pl_ex_file, 1)
+    manipolate_examples(pl_ex_file, 15)
     """line = 'e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).'
     lines = ['e(y,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).', 'ciao', 'e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).']
     print(line not in lines)"""

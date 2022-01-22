@@ -7,29 +7,58 @@ induce_albero( Albero ) :-
 	findall( e(Classe,Oggetto), e(Classe,Oggetto), Esempi),
         findall( Att,a(Att,_), Attributi),
         induce_albero( Attributi, Esempi, Albero),!, % cut da capire meglio
-	mostra( Albero ),
+	%mostra( Albero ),
 	assert(alb(Albero)).
 
 induce_albero( _, [], null ) :- !.
-induce_albero( _, [e(Classe,_)|Esempi], l(Classe)) :-
+induce_albero( _, [e(Classe,_)|Esempi], l(Classe):1) :-
 	\+ ( member(e(ClassX,_),Esempi), ClassX \== Classe ),!.
 induce_albero( Attributi, Esempi, t(Attributo,SAlberi) ) :-
-	minore_attributo( Attributi, Esempi, Attributo), !,
+	%minore_attributo( Attributi, Esempi, Attributo), !,
+	min_attr( Attributi, Esempi, Attributo), !,
 	del( Attributo, Attributi, Rimanenti ),
 	a( Attributo, Valori ),
 	induce_alberi( Attributo, Valori, Rimanenti, Esempi, SAlberi).
-induce_albero( _, Esempi, l(X)) :-
+
+induce_albero( _, Esempi, l(X):P) :-
 	findall( Classe, member(e(Classe,_),Esempi), Classi),
 	length(Classi,N),
 	findall(1, member(n,Classi), Negativi),
 	length(Negativi, NN),
-	conta_classi(N,NN,X).
+	conta_classi(N,NN,X,P).
 
-minore_attributo( Attributi, Esempi, MigliorAttributo )  :-
-	setof( Sum/A,
-	      (member(A,Attributi) , somma_attributo( Esempi,A,Sum)),
-	      [MinorDisuguaglianza/MigliorAttributo|_] ).
+conta_classi(N,NN,y,P) :-
+	NN < N/2,
+	P is 1-(NN/N).
 
+conta_classi(N,NN,n,P) :-
+	NN > N/2,
+	P is NN/N.
+
+conta_classi(N,NN,nc,0) :-
+	NN =:= N/2.
+
+
+%minore_attributo( Attributi, Esempi, MigliorAttributo )  :-
+	%setof( Sum/A,
+	 %     (member(A,Attributi) , somma_attributo( Esempi,A,Sum)),
+	  %    [MinorDisuguaglianza/MigliorAttributo|_] ).
+
+min_attr(Attributi, Esempi, BestAttr) :-
+	findall( Sum/A,
+		(member(A,Attributi) , somma_attributo( Esempi,A,Sum)),
+		 L),
+	findall(Sum, (member(Sum/A,L)), LValue),
+	prendi_minimo(LValue, Min),
+	member(Min/BestAttr,L).
+
+prendi_minimo([L|Ls], Min) :-
+    list_min(Ls, L, Min).
+
+list_min([], Min, Min).
+list_min([L|Ls], Min0, Min) :-
+    Min1 is min(L, Min0),
+    list_min(Ls, Min1, Min).
 
 somma_attributo( Esempi, Attributo, Sum) :-
 	a( Attributo, AttVals),
@@ -70,8 +99,6 @@ induce_alberi(Att,[Val1|Valori],AttRimasti,Esempi,[Val1:Alb1|Alberi])  :-
 	induce_albero(AttRimasti,SottoinsiemeEsempi,Alb1),
 	induce_alberi(Att,Valori,AttRimasti,Esempi,Alberi).
 
-% Sottoinsieme � il sottoinsieme di esempi che soddisfa la condizione
-% attributo=valore
 attval_subset(AttributoValore,Esempi,Sottoinsieme) :-
 	findall(e(C,O),(member(e(C,O),Esempi),soddisfa(O,[AttributoValore])),Sottoinsieme).
 
@@ -97,28 +124,19 @@ mostratutto([V:T|C],I) :-
 	mostra(T,I1),
 	mostratutto(C,I).
 
-classifica(Oggetto,nc,t(Att,Valori)) :- % dato t(+Att,+Valori), Oggetto è della Classe
-	member(Att=Val,Oggetto),  % se Att=Val è elemento della lista Oggetto
-        member(Val:null,Valori). % e Val:null è in Valori
-
-classifica(Oggetto,Classe,t(Att,Valori)) :- % dato t(+Att,+Valori), Oggetto è della Classe
-	member(Att=Val,Oggetto),  % se Att=Val è elemento della lista Oggetto
-        member(Val:l(Classe),Valori). % e Val:l(Classe) è in Valori
+classifica(Oggetto,nc,t(Att,Valori)) :-
+	member(Att=Val,Oggetto),
+	member(Val:null,Valori).
 
 classifica(Oggetto,Classe,t(Att,Valori)) :-
-	member(Att=Val,Oggetto),  % se Att=Val è elemento della lista Oggetto
+	member(Att=Val,Oggetto),
+        member(Val:l(Classe):_,Valori).
+
+classifica(Oggetto,Classe,t(Att,Valori)) :-
+	member(Att=Val,Oggetto),
 	delete(Oggetto,Att=Val,Resto),
 	member(Val:t(AttFiglio,ValoriFiglio),Valori),
 	classifica(Resto,Classe,t(AttFiglio,ValoriFiglio)).
-
-conta_classi(N,NN,y) :-
-	NN < N/2.
-
-conta_classi(N,NN,n) :-
-	NN > N/2.
-
-conta_classi(N,NN,nc) :-
-	NN =:= N/2.
 
 matrice_confusione :-
 	alb(Albero),

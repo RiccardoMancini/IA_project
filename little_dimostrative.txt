@@ -10,14 +10,60 @@ persone_malate(N):-
     findall(1, e(y,_), Malati),
     length(Malati, N).
 
-colesterolo(Val,N):- %esempio: prob(prob_col_Val("Extremely high"),P).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+eta(Val,N):- %esempio: prob(prob_eta("Seconda"),P).
+    findall(1, e(_,[age = Val|_]),Lista),
+    length(Lista,N).
+
+prob_eta(Val):AN/N:-
+    eta(Val,AN),
+    numero_persone(N).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+sesso(Val,N):- %esempio: prob(prob_sesso("M"),P).
+    findall(1, e(_,[_,sex = Val|_]),Lista),
+    length(Lista,N).
+
+prob_sesso(Val):SEX/N:-
+    sesso(Val,SEX),
+    numero_persone(N).
+
+verifica_sesso(Ptot):-
+    prob(prob_sesso("M"),PM),
+    prob(prob_sesso("F"),PF),
+    Ptot = PM + PF.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+chest_pain(Val,N):- %esempio: prob(prob_chest_pain("ATA"),P).
+    findall(1, e(_,[_,_,chest_pain_type = Val|_]),Lista),
+    length(Lista,N).
+
+prob_chest_pain(Val):CP/N:-
+    chest_pain(Val,CP),
+    numero_persone(N).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+restingBP(Val,N):- %esempio: prob(prob_restingBP("High"),P).
+    findall(1, e(_,[_,_,_,restingBP = Val|_]),Lista),
+    length(Lista,N).
+
+prob_resting_BP(Val):RBP/N:-
+    restingBP(Val,RBP),
+    numero_persone(N).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+colesterolo(Val,N):- %esempio: prob(prob_col("Extremely high"),P).
     findall(1, e(_,[_,_,_,_,cholesterol = Val|_]),Lista),
     length(Lista,N).
 
-prob_col_Val(Val):COL/N:-
+prob_col(Val):COL/N:-
     colesterolo(Val,COL),
     numero_persone(N).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+fastingBS(Val,N):- %esempio: prob(prob_fastingBS(0),P).
+    findall(1, e(_,[_,_,_,_,_,fastingBS = Val|_]),Lista),
+    length(Lista,N).
 
+prob_fasting_BS(Val):FBS/N:-
+    fastingBS(Val,FBS),
+    numero_persone(N).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %col_Ex_high(N):-
  %   findall(1, e(_,[_,_,_,_,cholesterol = "Extremely high"|_]),ColAlto),
  %  length(ColAlto,N).

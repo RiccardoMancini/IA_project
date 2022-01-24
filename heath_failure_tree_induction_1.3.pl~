@@ -49,11 +49,11 @@ min_attr(Attributi, Esempi, BestAttr) :-
 		(member(A,Attributi) , somma_attributo( Esempi,A,Sum)),
 		 L),
 	findall(Sum, (member(Sum/A,L)), LValue),
-	prendi_minimo(LValue, Min),
+	prendi_minimo(L, Min),
 	member(Min/BestAttr,L).
 
-prendi_minimo([L|Ls], Min) :-
-    list_min(Ls, L, Min).
+prendi_minimo([Sum/A|Sums/As], Min) :-
+    list_min(Sums, Sum, Min).
 
 list_min([], Min, Min).
 list_min([L|Ls], Min0, Min) :-
@@ -130,7 +130,7 @@ classifica(Oggetto,nc,t(Att,Valori)) :-
 
 classifica(Oggetto,Classe,t(Att,Valori)) :-
 	member(Att=Val,Oggetto),
-        member(Val:l(Classe),Valori).
+        member(Val:l(Classe):_,Valori).
 
 classifica(Oggetto,Classe,t(Att,Valori)) :-
 	member(Att=Val,Oggetto),

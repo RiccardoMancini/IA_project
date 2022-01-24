@@ -152,26 +152,30 @@ matrice_confusione :-
 	write('Accuratezza: '), writeln(A),
 	write('Errore: '), writeln(E).
 
-valuta(_,[],VN,VN,VP,VP,FN,FN,FP,FP,NC,NC).            % testset vuoto -> valutazioni finali
+valuta(_,[],VN,VN,VP,VP,FN,FN,FP,FP,NC,NC).
 valuta(Albero,[n/Oggetto|Coda],VN,VNA,VP,VPA,FN,FNA,FP,FPA,NC,NCA) :-
-	classifica(Oggetto,n,Albero), !,      % prevede correttamente non sopravvivenza
+	classifica(Oggetto,n,Albero), !,
 	VNA1 is VNA + 1,
 	valuta(Albero,Coda,VN,VNA1,VP,VPA,FN,FNA,FP,FPA,NC,NCA).
 valuta(Albero,[y/Oggetto|Coda],VN,VNA,VP,VPA,FN,FNA,FP,FPA,NC,NCA) :-
-	classifica(Oggetto,y,Albero), !, % prevede correttamente sopravvivenza
+	classifica(Oggetto,y,Albero), !,
 	VPA1 is VPA + 1,
 	valuta(Albero,Coda,VN,VNA,VP,VPA1,FN,FNA,FP,FPA,NC,NCA).
 valuta(Albero,[y/Oggetto|Coda],VN,VNA,VP,VPA,FN,FNA,FP,FPA,NC,NCA) :-
-	classifica(Oggetto,n,Albero), !,      % prevede erroneamente non sopravvivenza
+	classifica(Oggetto,n,Albero), !,
 	FNA1 is FNA + 1,
 	valuta(Albero,Coda,VN,VNA,VP,VPA,FN,FNA1,FP,FPA,NC,NCA).
 valuta(Albero,[n/Oggetto|Coda],VN,VNA,VP,VPA,FN,FNA,FP,FPA,NC,NCA) :-
-	classifica(Oggetto,y,Albero), !, % prevede erroneamente sopravvivenza
+	classifica(Oggetto,y,Albero), !,
 	FPA1 is FPA + 1,
 	valuta(Albero,Coda,VN,VNA,VP,VPA,FN,FNA,FP,FPA1,NC,NCA).
 
-valuta(Albero,[_/Oggetto|Coda],VN,VNA,VP,VPA,FN,FNA,FP,FPA,NC,NCA) :- % non classifica
-	classifica(Oggetto,nc,Albero), !, % non classificato
+valuta(Albero,[_/Oggetto|Coda],VN,VNA,VP,VPA,FN,FNA,FP,FPA,NC,NCA) :-
+	classifica(Oggetto,nc,Albero), !,
 	NCA1 is NCA + 1,
 	valuta(Albero,Coda,VN,VNA,VP,VPA,FN,FNA,FP,FPA,NC,NCA1).
+
+
+
+
 

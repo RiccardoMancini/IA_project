@@ -3,19 +3,20 @@
 :- consult(db_heart_training).
 :- consult(db_heart_test).
 
+
 induce_albero( Albero ) :-
 	findall( e(Classe,Oggetto), e(Classe,Oggetto), Esempi),
         findall( Att,a(Att,_), Attributi),
-        induce_albero( Attributi, Esempi, Albero),!, % cut da capire meglio
+        induce_albero( Attributi, Esempi, Albero),
 	%mostra( Albero ),
 	assert(alb(Albero)).
+
 
 induce_albero( _, [], null ) :- !.
 induce_albero( _, [e(Classe,_)|Esempi], l(Classe):1) :-
 	\+ ( member(e(ClassX,_),Esempi), ClassX \== Classe ),!.
 induce_albero( Attributi, Esempi, t(Attributo,SAlberi) ) :-
-	%minore_attributo( Attributi, Esempi, Attributo), !,
-	min_attr( Attributi, Esempi, Attributo), !,
+	sceglie_attributo( Attributi, Esempi, Attributo),
 	del( Attributo, Attributi, Rimanenti ),
 	a( Attributo, Valori ),
 	induce_alberi( Attributo, Valori, Rimanenti, Esempi, SAlberi).
@@ -38,70 +39,74 @@ conta_classi(N,NN,n,P) :-
 conta_classi(N,NN,nc,0) :-
 	NN =:= N/2.
 
+% sceglie_attributo( +Attributi, +Esempi, -MigliorAttributo):
+% seleziona l'Attributo che meglio discrimina le classi; si basa sul
+% concetto della "Gini-disuguaglianza"; utilizza il setof per ordinare
+% gli attributi in base al valore crescente della loro disuguaglianza
+% usare il setof per far questo è dispendioso e si può fare di meglio ..
+sceglie_attributo( Attributi, Esempi, MigliorAttributo )  :-
+	setof( Disuguaglianza/A,
+	      (member(A,Attributi) , disuguaglianza(Esempi,A,Disuguaglianza)),
+	      [MinorDisuguaglianza/MigliorAttributo|_] ).
 
-%minore_attributo( Attributi, Esempi, MigliorAttributo )  :-
-	%setof( Sum/A,
-	 %     (member(A,Attributi) , somma_attributo( Esempi,A,Sum)),
-	  %    [MinorDisuguaglianza/MigliorAttributo|_] ).
-
-min_attr(Attributi, Esempi, BestAttr) :-
-	findall( Sum/A,
-		(member(A,Attributi) , somma_attributo( Esempi,A,Sum)),
-		 L),
-	findall(Sum, (member(Sum/A,L)), LValue),
-	prendi_minimo(LValue, Min),
-	member(Min/BestAttr,L).
-
-prendi_minimo([L|Ls], Min) :-
-    list_min(Ls, L, Min).
-
-list_min([], Min, Min).
-list_min([L|Ls], Min0, Min) :-
-    Min1 is min(L, Min0),
-    list_min(Ls, Min1, Min).
-
-somma_attributo( Esempi, Attributo, Sum) :-
+% disuguaglianza(+Esempi, +Attributo, -Dis):
+% Dis è la disuguaglianza combinata dei sottoinsiemi degli esempi
+% partizionati dai valori dell'Attributo
+disuguaglianza( Esempi, Attributo, Dis) :-
 	a( Attributo, AttVals),
-	somma( Esempi, Attributo, AttVals, 0, Sum),!.
+	somma_pesata( Esempi, Attributo, AttVals, 0, Dis).
 
-somma(_,_,[],Pbase,Pbase).
-somma( Esempi, Att, [Val|Valori], SommaParziale, Somma) :-
-        length(Esempi, N),
-	findall( C,
-		 (member(e(C,Desc),Esempi) , soddisfa(Desc,[Att=Val])),
-		 EsempiSoddisfatti ),
-	length(EsempiSoddisfatti, NVal),
-	NVal > 0, !,
-	findall(P,
-                (bagof(1,
-                       member(y,EsempiSoddisfatti),
+% somma_pesata( +Esempi, +Attributo, +AttVals, +SommaParziale, -Somma)
+% restituisce la Somma pesata delle disuguaglianze
+% Gini = sum from{v} P(v) * sum from{i <> j} P(i|v)*P(j|v)
+somma_pesata( _, _, [], Somma, Somma).
+somma_pesata( Esempi, Att, [Val|Valori], SommaParziale, Somma) :-
+	length(Esempi,N),                                            % quanti sono gli esempi
+	findall( C,						     % EsempiSoddisfatti: lista delle classi ..
+		 (member(e(C,Desc),Esempi) , soddisfa(Desc,[Att=Val])), % .. degli esempi (con ripetizioni)..
+		 EsempiSoddisfatti ),				     % .. per cui Att=Val
+	length(EsempiSoddisfatti, NVal),			     % quanti sono questi esempi
+	NVal > 0, !,                                                 % almeno uno!
+	findall(P,			           % trova tutte le P robabilità
+                (bagof(1,		           %
+                       member(_,EsempiSoddisfatti),
                        L),
                  length(L,NVC),
                  P is NVC/NVal),
-                Pp),
-        entropy(Pp,E),
-        NuovaSommaParziale is SommaParziale + E*NVal/N,
-        somma(Esempi,Att,Valori,NuovaSommaParziale,Somma)
-        ;
-        somma(Esempi,Att,Valori,SommaParziale,Somma).
+                ClDst),
+        gini(ClDst,Gini),
+	NuovaSommaParziale is SommaParziale + Gini*NVal/N,
+	somma_pesata(Esempi,Att,Valori,NuovaSommaParziale,Somma)
+	;
+	somma_pesata(Esempi,Att,Valori,SommaParziale,Somma). % nessun esempio soddisfa Att = Val
 
-entropy([],0).
-entropy([1],0).
-entropy([P],E):-
-        log(P,L1),
-        log((1-P),L2),
-        E is -1*(P*L1+(1-P)*L2).
+% gini(ListaProbabilità, IndiceGini)
+%    IndiceGini = SOMMATORIA Pi*Pj per tutti i,j tali per cui i\=j
+%    E' equivalente a 1 - SOMMATORIA Pi*Pi su tutti gli i
+gini(ListaProbabilità,Gini) :-
+	somma_quadrati(ListaProbabilità,0,SommaQuadrati),
+	Gini is 1-SommaQuadrati.
+somma_quadrati([],S,S).
+somma_quadrati([P|Ps],PartS,S)  :-
+	NewPartS is PartS + P*P,
+	somma_quadrati(Ps,NewPartS,S).
 
-
-induce_alberi(_,[],_,_,[]).
+% induce_alberi(Attributi, Valori, AttRimasti, Esempi, SAlberi):
+% induce decisioni SAlberi per sottoinsiemi di Esempi secondo i Valori
+% degli Attributi
+induce_alberi(_,[],_,_,[]).     % nessun valore, nessun sottoalbero
 induce_alberi(Att,[Val1|Valori],AttRimasti,Esempi,[Val1:Alb1|Alberi])  :-
 	attval_subset(Att=Val1,Esempi,SottoinsiemeEsempi),
 	induce_albero(AttRimasti,SottoinsiemeEsempi,Alb1),
 	induce_alberi(Att,Valori,AttRimasti,Esempi,Alberi).
 
+% attval_subset( Attributo = Valore, Esempi, Subset):
+%   Subset è il sottoinsieme di Examples che soddisfa la condizione
+%   Attributo = Valore
 attval_subset(AttributoValore,Esempi,Sottoinsieme) :-
 	findall(e(C,O),(member(e(C,O),Esempi),soddisfa(O,[AttributoValore])),Sottoinsieme).
 
+% soddisfa(Oggetto, Descrizione):
 soddisfa(Oggetto,Congiunzione)  :-
 	\+ (member(Att=Val,Congiunzione),
 	    member(Att=ValX,Oggetto),
@@ -124,6 +129,9 @@ mostratutto([V:T|C],I) :-
 	mostra(T,I1),
 	mostratutto(C,I).
 
+
+
+
 classifica(Oggetto,nc,t(Att,Valori)) :-
 	member(Att=Val,Oggetto),
 	member(Val:null,Valori).
@@ -138,11 +146,11 @@ classifica(Oggetto,Classe,t(Att,Valori)) :-
 	member(Val:t(AttFiglio,ValoriFiglio),Valori),
 	classifica(Resto,Classe,t(AttFiglio,ValoriFiglio)).
 
-matrice_confusione :-
+stampa_matrice_di_confusione :-
 	alb(Albero),
 	findall(Classe/Oggetto,s(Classe,Oggetto),TestSet),
 	length(TestSet,N),
-	valuta(Albero,TestSet,VN,0,VP,0,FN,0,FP,0,NC,0),!,
+	valuta(Albero,TestSet,VN,0,VP,0,FN,0,FP,0,NC,0),
 	A is (VP + VN) / (N - NC), % Accuratezza
 	E is 1 - A,		   % Errore
 	write('Test effettuati :'),  writeln(N),
@@ -174,4 +182,6 @@ valuta(Albero,[_/Oggetto|Coda],VN,VNA,VP,VPA,FN,FNA,FP,FPA,NC,NCA) :- % non clas
 	classifica(Oggetto,nc,Albero), !, % non classificato
 	NCA1 is NCA + 1,
 	valuta(Albero,Coda,VN,VNA,VP,VPA,FN,FNA,FP,FPA,NC,NCA1).
+
+
 

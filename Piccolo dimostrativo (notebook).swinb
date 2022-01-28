@@ -15,7 +15,7 @@
 - struttura esempi
 </div>
 
-<div class="nb-cell program" data-background="true" data-singleline="true" name="p1">
+<div class="nb-cell program" data-background="true" name="p1">
 %DATASET
 a(age,["First","Second","Third"]).
 a(sex,["M","F"]).
@@ -774,7 +774,6 @@ e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", chol
 e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
 e(y,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
 e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
-
 </div>
 
 <div class="nb-cell markdown" name="md3">
@@ -796,12 +795,11 @@ e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/hig
 </div>
 
 <div class="nb-cell program" data-background="true" name="p4">
+:- begin_lpad.    
 numero_persone(N) :-
     findall(1, e(_,_), Campioni),
     length(Campioni, N).
 
-
-:- begin_lpad    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% Probabilità semplici %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 eta(Val,N):- %esempio: prob(prob_eta("Seconda"),P).
     findall(1, e(_,[age = Val|_]),Lista),
@@ -909,8 +907,7 @@ prob_malato:PM/N:-
 
 prob_sano:1-PM:-
     prob(prob_malato,PM).
-
-
+:-end_lpad.
 </div>
 
 <div class="nb-cell markdown" name="md7">
@@ -939,7 +936,7 @@ prob(prob_sano,P).
 </div>
 
 <div class="nb-cell program" data-background="true" name="p2">
-
+:- begin_lpad.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% Probabilità Congiunte e Condizionate %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 congiunzione(Salute,Attr,Val,N):- %esempio: 
     dist_attr(Attr,Val,Valori),
@@ -1036,7 +1033,7 @@ calcolo_hist(Salute,Attr,[T|C],Traccia,TracciaF):-
 </div>
 
 <div class="nb-cell query" name="q1">
-grafico(cholesterol,Chart).
+grafico(age,Chart).
 </div>
 
 </div>

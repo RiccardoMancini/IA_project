@@ -6,15 +6,13 @@
 induce_albero( Albero ) :-
 	findall( e(Classe,Oggetto), e(Classe,Oggetto), Esempi),
         findall( Att,a(Att,_), Attributi),
-        induce_albero( Attributi, Esempi, Albero),!, % cut da capire meglio
-	%mostra( Albero ),
+        induce_albero( Attributi, Esempi, Albero),!,
 	assert(alb(Albero)).
 
 induce_albero( _, [], null ) :- !.
 induce_albero( _, [e(Classe,_)|Esempi], l(Classe):1) :-
 	\+ ( member(e(ClassX,_),Esempi), ClassX \== Classe ),!.
 induce_albero( Attributi, Esempi, t(Attributo,SAlberi) ) :-
-	%minore_attributo( Attributi, Esempi, Attributo), !,
 	min_attr( Attributi, Esempi, Attributo), !,
 	del( Attributo, Attributi, Rimanenti ),
 	a( Attributo, Valori ),
@@ -37,12 +35,6 @@ conta_classi(N,NN,n,P) :-
 
 conta_classi(N,NN,nc,0) :-
 	NN =:= N/2.
-
-
-%minore_attributo( Attributi, Esempi, MigliorAttributo )  :-
-	%setof( Sum/A,
-	 %     (member(A,Attributi) , somma_attributo( Esempi,A,Sum)),
-	  %    [MinorDisuguaglianza/MigliorAttributo|_] ).
 
 min_attr(Attributi, Esempi, BestAttr) :-
 	findall( Sum/A,
@@ -110,19 +102,6 @@ soddisfa(Oggetto,Congiunzione)  :-
 del(T,[T|C],C) :- !.
 del(A,[T|C],[T|C1]) :-
 	del(A,C,C1).
-
-mostra(T) :-
-	mostra(T,0).
-mostra(null,_) :- writeln(' ==> ???').
-mostra(l(X),_) :- write(' ==> '),writeln(X).
-mostra(t(A,L),I) :-
-	nl,tab(I),write(A),nl,I1 is I+2,
-	mostratutto(L,I1).
-mostratutto([],_).
-mostratutto([V:T|C],I) :-
-	tab(I),write(V), I1 is I+2,
-	mostra(T,I1),
-	mostratutto(C,I).
 
 classifica(Oggetto,nc,t(Att,Valori)) :-
 	member(Att=Val,Oggetto),

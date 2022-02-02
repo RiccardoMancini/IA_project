@@ -9,3 +9,5 @@ _Link dataset heart issues: https://www.kaggle.com/fedesoriano/heart-failure-pre
 _Documentazione cplint: http://friguzzi.github.io/cplint/_build/latex/cplint.pdf_
 
 _Appunti vari: https://docs.google.com/document/d/15ddOQqzEjZuvyDJ0g_bkPUN5V49Tc9Y1/edit_ 
+
+_Link paper cplint on SWISH: https://ml.unife.it/wp-content/uploads/Papers/RigBelLam-SPE16.pdf

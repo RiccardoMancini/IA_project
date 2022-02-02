@@ -180,7 +180,7 @@ prevedi(Oggetto,t(Att,Valori),Classe,P) :-
 	member(Val:t(AttFiglio,ValoriFiglio),Valori),
 	prevedi(Resto,t(AttFiglio,ValoriFiglio),Classe,P).
 
-previsione(Oggetto,Classe,P) :-
+previsione(Oggetto,Classe) :-
 	alb(Albero),
 	prevedi(Oggetto,Albero,Classe,P),!,
 	risultato(Classe,P).

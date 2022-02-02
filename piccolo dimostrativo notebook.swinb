@@ -1,9 +1,17 @@
 <div class="notebook">
 
 <div class="nb-cell markdown" name="md1">
-# **Piccolo dimostrativo**
-- due parole su cosa tratterà questo notebook
-- cazzo è il cplint e le sue ""potenzialità""
+## **Analisi probabilistiche sul "Heart Failure Prediction Dataset" in cplint**
+### Introduzione al Notebook
+*Il presente Notebook attraverso l'utilizzo di un dataset, nel quale sono riportati dei risultati clinici utili per la previsione di problemi cardiaci a seguito di una classificazione dei casi*. Attraverso l'utilizzo del cplint si andranno a calcolare delle probabilità rilevanti con le quali si potranno studiare le relazioni fra i singoli attributi e la diagnosi del paziente.
+Vengono calcolate delle probabilità:
+- _semplici_, inerenti ad ogni valore di ogni attributo;
+- _congiunte_, inerenti a più valori verificatisi contemporaneamente;
+- _condizionate_, inerenti all'incidenza di una data combinazione di valori di attributi sullo stato di salute e viceversa.
+Infine è presente un istogramma in cui è possibile graficare l'incidenza degli attributi sullo stato di salute.
+
+### Cplint
+È una raccolta di programmi che sfrutta il linguaggio LPADs (Logic Programs with Annotated Disjunctions), ossia un insieme disgiunto di clausole.
 </div>
 
 <div class="nb-cell markdown" name="md2">
@@ -780,6 +788,17 @@ e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/hig
 ### Librerie
 - qualche parola sulle librerie utilizzate
 - che cazzo è lpad
+un insieme finito di disgiungzioni di clausole
+In Logic Programs with Annotated Disjunctions (LPADs) [Vennekens et al.,
+2004], the alternatives are expressed by means of annotated disjunctive heads
+of clauses. An annotated disjunctive clause Ci has the form
+hi1 : ⇧i1 ; ... ; hini : ⇧ini – bi1,...,bimi
+where hi1,...,hini are logical atoms, bi1,...,bimi are logical literals, and
+⇧i1,..., ⇧ini are real numbers in the interval r0, 1s such that ∞ni
+k“1 ⇧ik “ 1.
+An LPAD is a finite set of annotated disjunctive clauses.
+Each world is obtained by selecting one atom from the head of each
+grounding of each annotated disjunctive clause.
 </div>
 
 <div class="nb-cell program" data-background="true" name="p3">
@@ -1023,6 +1042,9 @@ teo_bayes(age,"Second",y,P).
 
 <div class="nb-cell markdown" name="md10">
 ### Grafici
+- spiegazione su cosa mostrano i grafici
+- come sono calcolati
+- come funzionano i predicati grafico e calcolo_hist
 </div>
 
 <div class="nb-cell program" data-background="true" name="p5">
@@ -1046,7 +1068,11 @@ calcolo_hist(Salute,Attr,[T|C],Traccia,TracciaF):-
 </div>
 
 <div class="nb-cell query" name="q1">
-grafico(sex,Chart).
+grafico(st_slope,GraficoStSlope).
+</div>
+
+<div class="nb-cell query" name="q5">
+grafico(cholesterol,GraficoColesterolo).
 </div>
 
 </div>

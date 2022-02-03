@@ -3,7 +3,8 @@
 <div class="nb-cell markdown" name="md1">
 ## **Analisi probabilistiche sul "Heart Failure Prediction Dataset" in cplint**
 ### Introduzione al Notebook
-*Il presente Notebook attraverso l'utilizzo di un dataset, nel quale sono riportati dei risultati clinici utili per la previsione di problemi cardiaci a seguito di una classificazione dei casi*. Attraverso l'utilizzo del cplint si andranno a calcolare delle probabilità rilevanti con le quali si potranno studiare le relazioni fra i singoli attributi e la diagnosi del paziente.
+Nel presente notebook vengono sfruttati i 746 risultati clinici contenuti all'interno del "Heart Failure Prediction Dataset", ai fini di uno studio probabilistico che dia un'indicazione sulla possibilità di relazione fra i valori presenti. Questo studio andrà poi ad affiancare il risultato dell'apprendimento effettuato sul medesimo dataset, per valutarne la coerenza.
+Lo studio avverrà attraverso l'utilizzo del cplint, con il quale verranno calcolate delle probabilità rilevanti, queste consentiranno di studiare i legami fra i singoli attributi e la diagnosi del paziente.
 Vengono calcolate delle probabilità:
 - _semplici_, inerenti ad ogni valore di ogni attributo;
 - _congiunte_, inerenti a più valori verificatisi contemporaneamente;
@@ -37,14 +38,41 @@ Per quanto riguarda la struttura il dataset contiene, come già anticipato, 746 
 
 <div class="nb-cell markdown" name="md11">
 #### Discretizzazione
-(qualche parola)
+Nel dataset alcuni attributi contengono molti valori differenti, un esempio può essere l'età, che spazia dai 28 fino ai 77 anni, o il colesterolo che può potenzialmente assumere infiniti valori. Per questo è stato necessario intervenire con una discretizzazione del dataset, poiché le informazioni, derivanti da uno studio che tratta ogni singolo valore di un attributo come se stante, sarebbero potute essere forvianti.
 
-(nuova struttura degli attributi e i valori che possono assumere)
-...
+Con l'utilizzo di Python si è quindi andati a modificare la struttura del dataset, andando in primis a discretizzare i valori come segue:
+- age:
+ - age ≤ 18 → First;
+ - 18 &lt; age ≤ 60 → Second;
+ - age &gt; 60 → Third;
+- restingBP:
+ - restingBP &lt; 120 → Optimal;
+ - 120 ≤ restingBP &lt; 140 → Normal/High;
+ - 140 ≤ restingBP &lt;160 → High;
+ - restingBP ≥ 160 → Very high;
+- cholesterol:
+ - cholesterol &lt; 200 → Desiderable;
+ - 200 ≤ cholesterol &lt; 240 → Moderately;
+ - cholesterol ≥ 240 → Extremely high;
+- maxHR:
+ - maxHR &lt; 100 → 1;
+ - 100 ≤ maxHR &lt; 130 → 2;
+ - 130 ≤ maxHR &lt; 160 → 3;
+ - maxHR ≥ 160 → 4;
+- oldpeak:
+ - oldpeak &lt; 0.5 → Low risk;
+ - 0.5 ≤ oldpeak &lt; 1.5 → Normal risk;
+ - oldpeak ≥ 1.5 → High risk.
+# UN SANTISSIMO CAPOVERSO, GRAZIE
+I restanti attributi non menzionati non avevano bisogno della discretizzazione, poiché lo erano di propria natura. In particolare sono:
+- sex;
+- chest_pain_type;
+- fastingBS;
+- restingECG;
+- excercise_angina;
+- st_slope.
 
-
-(struttura esempi)
-...
+Infine, sempre attraverso Python è stata costruita la struttura degli esempi in modo tale che assumessero una forma **esempio(Classe,[Attributi])**, nel quale per "Classe" si intende lo stato di salute ("y" se malato, "n" se non malato), mentre per "[Attributi]" si intende una lista contenente tutti gli attributi con associato il relativo valore assunto nell'esempio). Sono stati anche costruiti delle clausole per gli attributi nella forma **attributo(NomeAttributo,[ValoriAttributo])** nel quale "[NomeAttributo]" identifica quale attributo si prende in esame, mentre "ValoriAttributo" è la lista contenente i valori che esso può assumere.
 
 </div>
 

@@ -167,6 +167,36 @@ valuta(Albero,[_/Oggetto|Coda],VN,VNA,VP,VPA,FN,FNA,FP,FPA,NC,NCA) :-
 	valuta(Albero,Coda,VN,VNA,VP,VPA,FN,FNA,FP,FPA,NC,NCA1).
 
 
+prevedi(Oggetto,t(Att,Valori),nc,0) :-
+	member(Att=Val,Oggetto),
+	member(Val:null,Valori).
+
+prevedi(Oggetto,t(Att,Valori),Classe,P) :-
+	member(Att=Val,Oggetto),
+        member(Val:l(Classe):P,Valori).
+
+prevedi(Oggetto,t(Att,Valori),Classe,P) :-
+	member(Att=Val,Oggetto),
+	delete(Oggetto,Att=Val,Resto),
+	member(Val:t(AttFiglio,ValoriFiglio),Valori),
+	prevedi(Resto,t(AttFiglio,ValoriFiglio),Classe,P).
+
+previsione(Oggetto,Classe) :-
+	induce_albero(Albero),
+	prevedi(Oggetto,Albero,Classe,P),!,
+	risultato(Classe,P).
+
+risultato(y,P):-
+	Prob is P*100,
+	write('Il paziente ha il '), write(Prob), write('% di probabilità di essere malato!').
+risultato(n,P):-
+	Prob is P*100,
+	write('Il paziente ha il '), write(Prob), write('% di probabilità di non essere malato!').
+
+risultato(nc,0):-
+	write('Non è possibile definire lo stato di salute del paziente!').
+
+
 
 
 

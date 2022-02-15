@@ -1,0 +1,12 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   ISTOGRAMMA   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%accoppia_pesi([],[]).
+%accoppia_pesi([T|C], [TP|CP]):-
+%    TP = [T]-1,
+%    accoppia_pesi(C,CP).
+    
+
+istogramma_col(Salute,Chart):-
+    prob(prob_salute_per_val(Salute,[_,_,_,_,"Desiderable"|_]), P1),
+    prob(prob_salute_per_val(Salute,[_,_,_,_,"Moderately high"|_]), P2),
+    prob(prob_salute_per_val(Salute,[_,_,_,_,"Extremely high"|_]), P3),
+    argbar(["Desiderable" -P1,"Moderately high" -P2,"Extremely high"-P3],Chart).

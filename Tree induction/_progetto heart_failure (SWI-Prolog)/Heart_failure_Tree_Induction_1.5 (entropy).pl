@@ -14,7 +14,7 @@ induce_albero( _, [e(Classe,_)|Esempi], l(Classe):1) :-
 	\+ ( member(e(ClassX,_),Esempi), ClassX \== Classe ),!.
 induce_albero( Attributi, Esempi, t(Attributo,SAlberi) ) :-
 	min_attr( Attributi, Esempi, Attributo), !,
-	del( Attributo, Attributi, Rimanenti ),
+	rimuovi( Attributo, Attributi, Rimanenti ),
 	a( Attributo, Valori ),
 	induce_alberi( Attributo, Valori, Rimanenti, Esempi, SAlberi).
 
@@ -44,13 +44,15 @@ min_attr(Attributi, Esempi, BestAttr) :-
 	prendi_minimo(LValue, Min),
 	member(Min/BestAttr,L).
 
+%descrizione generale
+%prendi_minimo(....)
 prendi_minimo([L|Ls], Min) :-
-    list_min(Ls, L, Min).
+    min_lista(Ls, L, Min).
 
-list_min([], Min, Min).
-list_min([L|Ls], Min0, Min) :-
+min_lista([], Min, Min).
+min_lista([L|Ls], Min0, Min) :-
     Min1 is min(L, Min0),
-    list_min(Ls, Min1, Min).
+    min_lista(Ls, Min1, Min).
 
 somma_attributo( Esempi, Attributo, Sum) :-
 	a( Attributo, AttVals),
@@ -71,15 +73,15 @@ somma( Esempi, Att, [Val|Valori], SommaParziale, Somma) :-
                  length(L,NVC),
                  P is NVC/NVal),
                 Pp),
-        entropy(Pp,E),
+        entropia(Pp,E),
         NuovaSommaParziale is SommaParziale + E*NVal/N,
         somma(Esempi,Att,Valori,NuovaSommaParziale,Somma)
         ;
         somma(Esempi,Att,Valori,SommaParziale,Somma).
 
-entropy([],0).
-entropy([1],0).
-entropy([P],E):-
+entropia([],0).
+entropia([1],0).
+entropia([P],E):-
         log(P,L1),
         log((1-P),L2),
         E is -1*(P*L1+(1-P)*L2).
@@ -87,11 +89,11 @@ entropy([P],E):-
 
 induce_alberi(_,[],_,_,[]).
 induce_alberi(Att,[Val1|Valori],AttRimasti,Esempi,[Val1:Alb1|Alberi])  :-
-	attval_subset(Att=Val1,Esempi,SottoinsiemeEsempi),
+	esempi_AttVal(Att=Val1,Esempi,SottoinsiemeEsempi),
 	induce_albero(AttRimasti,SottoinsiemeEsempi,Alb1),
 	induce_alberi(Att,Valori,AttRimasti,Esempi,Alberi).
 
-attval_subset(AttributoValore,Esempi,Sottoinsieme) :-
+esempi_AttVal(AttributoValore,Esempi,Sottoinsieme) :-
 	findall(e(C,O),(member(e(C,O),Esempi),soddisfa(O,[AttributoValore])),Sottoinsieme).
 
 soddisfa(Oggetto,Congiunzione)  :-
@@ -99,9 +101,9 @@ soddisfa(Oggetto,Congiunzione)  :-
 	    member(Att=ValX,Oggetto),
 	    ValX \== Val).
 
-del(T,[T|C],C) :- !.
-del(A,[T|C],[T|C1]) :-
-	del(A,C,C1).
+rimuovi(T,[T|C],C) :- !.
+rimuovi(A,[T|C],[T|C1]) :-
+	rimuovi(A,C,C1).
 
 classifica(Oggetto,nc,t(Att,Valori)) :-
 	member(Att=Val,Oggetto),
@@ -193,11 +195,5 @@ risultato(n,P):-
 	write('Il paziente ha il '), write(Prob), write('% di probabilità di non essere malato!').
 
 risultato(nc,0):-
-	write('Non è possibile definire lo stato di salute del paziente!').
-
-
-
-
-
-
+	write('Non è possibile definire lo stato di salute rimuovi paziente!').
 

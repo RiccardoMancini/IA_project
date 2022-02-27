@@ -1,0 +1,1195 @@
+<div class="notebook">
+
+<div class="nb-cell markdown" name="md1">
+## **Analisi probabilistiche sul "Heart Failure Prediction Dataset" in cplint**
+### Introduzione
+Nel presente notebook vengono sfruttati i 746 risultati clinici contenuti all'interno del "Heart Failure Prediction Dataset", ai fini di uno studio probabilistico che dia un'indicazione sulla possibilità di relazione fra i valori presenti. Questo studio andrà poi ad affiancare il risultato dell'apprendimento effettuato sul medesimo dataset, per valutarne la coerenza.
+Lo studio avverrà attraverso l'utilizzo del cplint, con il quale verranno calcolate delle probabilità rilevanti, queste consentiranno di studiare i legami fra i singoli attributi e la diagnosi del paziente.
+Vengono calcolate delle probabilità:
+- _semplici_, inerenti ad ogni valore di ogni attributo;
+- _congiunte_, inerenti a più valori verificatisi contemporaneamente;
+- _condizionate_, inerenti all'incidenza di una data combinazione di valori di attributi sullo stato di salute e viceversa.
+Infine è presente un istogramma in cui è possibile graficare l'incidenza degli attributi sullo stato di salute.
+
+#### Cplint
+È una raccolta di programmi pensati per l'inferenza e l'apprendimento tramite: LPADs, ICL(Indipendent Choise Logic) e CP-logic programs. Nell'attuale progetto ci si è concentrati nella prima forma.
+
+LPAD è un insieme finito di clausole disgiunte annotate. Per annotate si intende che nella testa di ogni atomo è riportata una probabilità.
+LPAD a differenza del ProbLog consente solamente clausole probabilistiche nella forma di fatti con due sole alternative, una delle quali è implicita.
+
+
+(DA FINIRE con il begin/end_lpad)
+</div>
+
+<div class="nb-cell markdown" name="md2">
+### Dataset 
+L'[Heart Failure Prediction dataset](https://www.kaggle.com/fedesoriano/heart-failure-prediction) è una collezione di dati costituita da ben 746 casi di pazienti di cui si conoscono 11 caratteristiche (o features) che in un modo o nell'altro influenzano lo stato di salute del cuore di ognuno di essi.
+Di fatto, l'insufficienza cardiaca è un evento comune causato da malattie cardiovascolari, e grazie ai campioni raccolti in questo dataset è possibile prevedere una possibile malattia cardiaca. Infatti, le persone con malattie cardiovascolari o ad alto rischio cardiovascolare (per la presenza di uno o più fattori di rischio come ipertensione, diabete, iperlipidemia o malattie già accertate) necessitano di una diagnosi precoce e di una gestione tale da rendere un modello di machine learning di fondamentale importanza, ed è proprio per questo motivo che è stato ideato il dataset in questione.
+
+Per quanto riguarda la struttura il dataset contiene, come già anticipato, 746 casi, ognuno dei quali descritto da ben 12 valori che possono assumere i vari attributi. Nello specifico gli 11 attributi, più l'ultimo attributo che definisce la classe (ossia la salute del paziente), sono:
+
+- *Age*: l'età del paziente (_anni_)
+- *Sex*: il sesso del paziente (_M_: maschio, _F_: femmina)
+- *ChestPainType*: tipo di dolore toracico (_TA_: angina tipica, _ATA_: angina atipica, _NAP_: senza dolore, _ASY_: angina asintomatica)
+- *RestingBP*: pressione sanguigna a riposo (_mm Hg_)
+- *Cholesterol*: colesterolo totale sierico (_mm/dl_)
+- *FastingBS*: glicemia a digiuno (_1_: se FastingBS &gt; 120 mg/dl, _0_: altrimenti)
+- *RestingECG*: risultati dell'elettrocardiogramma a riposo (_Normal_: normale, _ST_: definisce un'anomalia dell'onda ST-T (inversione dell'onda T e/o elevazione o depressione dell'ST di &gt; 0,05 mV), _LVH_: mostra un'ipertrofia ventricolare sinistra probabile o definita secondo i criteri di Estes)
+- *MaxHR*: frequenza cardiaca massima raggiunta (_valore numerico tra 60 e 202_)
+- *ExerciseAngina*: angina da sforzo (_Y_: si, _N_: no)
+- *Oldpeak*: sottoslivellamento ST,  fa riferimento ad un'alterazione dell'elettrocardiogramma di superficie (_valore numerico tra -2.6 e 6.2_)
+- *ST_Slope*: la pendenza del segmento ST di picco (_Up_: in salita, _Flat_: piatta, _Down_: in discesa)
+- *HeartDisease*: la classe di output (_1_: presenta problemi cardiaci, _0_: normale)
+</div>
+
+<div class="nb-cell markdown" name="md11">
+#### Discretizzazione
+Nel dataset alcuni attributi assumono valori continui o discreti ma comunque molto ampi per il nostro caso d'uso. Un esempio è l'età, che spazia dai 28 fino ai 77 anni, o il colesterolo che può potenzialmente assumere infiniti valori. 
+Per questo è stato necessario intervenire con una discretizzazione del dataset, poiché le informazioni, derivanti da uno studio che tratta ogni singolo valore di un attributo come se stante, sarebbero potute essere forvianti.
+
+Qui di seguito sono riportate le discretizzazioni applicate.
+
+- *age*:
+ - age ≤ 18 → _First_
+ - 18 &lt; age ≤ 60 → _Second_
+ - age &gt; 60 → _Third_
+- *restingBP*:
+ - restingBP &lt; 120 → _Optimal_
+ - 120 ≤ restingBP &lt; 140 → _Normal/High_
+ - 140 ≤ restingBP &lt;160 → _High_
+ - restingBP ≥ 160 → _Very high_
+- *cholesterol*:
+ - cholesterol &lt; 200 → _Desiderable_
+ - 200 ≤ cholesterol &lt; 240 → _Moderately_
+ - cholesterol ≥ 240 → _Extremely high_
+- *maxHR*:
+ - maxHR &lt; 100 → _1_
+ - 100 ≤ maxHR &lt; 130 → _2_
+ - 130 ≤ maxHR &lt; 160 → _3_
+ - maxHR ≥ 160 → _4_
+- *oldpeak*:
+ - oldpeak &lt; 0.5 → _Low risk_
+ - 0.5 ≤ oldpeak &lt; 1.5 → _Normal risk_
+ - oldpeak ≥ 1.5 → _High risk_
+</div>
+
+<div class="nb-cell markdown" name="md12">
+I restanti attributi non menzionati non avevano bisogno della discretizzazione, poiché lo erano di propria natura. In particolare sono:
+	- *sex*
+	- *chest_pain_type*
+	- *fastingBS*
+	- *restingECG*
+	- *excercise_angina*
+	- *st_slope*
+
+Infine, per consentirne l'uso in prolog è stata costruita la struttura degli esempi in modo tale che assumessero una forma **esempio(Classe,[Attributi])**, nel quale per "Classe" si intende lo stato di salute ("y" se malato, "n" se non malato), mentre per "[Attributi]" si intende una lista contenente tutti gli attributi con associato il relativo valore assunto nell'esempio. 
+Sono stati anche costruiti delle clausole per gli attributi nella forma **attributo(NomeAttributo,[ValoriAttributo])** nel quale "[NomeAttributo]" identifica quale attributo si prende in esame, mentre "ValoriAttributo" è la lista contenente i valori che esso può assumere.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p1">
+% DATASET
+% Attributi: a(NomeAttributo,[ValoriAttributo])
+a(age,["First","Second","Third"]).
+a(sex,["M","F"]).
+a(chest_pain_type,["ATA","NAP","ASY","TA"]).
+a(restingBP,["Optimal","Normal/high","High","Very high"]).
+a(cholesterol,["Desiderable","Moderately high","Extremely high"]).
+a(fastingBS,[0,1]).
+a(restingECG,["Normal","ST","LVH"]).
+a(maxHR,[1,2,3,4]).
+a(exercise_angina,["N","Y"]).
+a(oldpeak,["Low risk","Normal risk","High risk"]).
+a(st_slope,["Up","Flat","Down"]).
+% Esempi e(Classe,[Attributo = Valore])
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Very high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 1, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "ST", maxHR = 1, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "TA", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 1, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 1, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 1, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Moderately high", fastingBS = 1, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Very high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 1, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 1, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Very high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 1, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 1, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "TA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 1, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "ST", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Very high", cholesterol = "Desiderable", fastingBS = 1, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 1, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "ST", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "TA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "ST", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "TA", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "High risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 1, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Very high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 1, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "TA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 1, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Very high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "ST", maxHR = 1, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Very high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "TA", restingBP = "Very high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "TA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 1, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "TA", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Very high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 1, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "TA", restingBP = "Very high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "ST", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "TA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 1, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "TA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "ST", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 1, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 1, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Very high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 1, restingECG = "LVH", maxHR = 1, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 1, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 1, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 1, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 1, restingECG = "ST", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Down"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "ST", maxHR = 1, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Extremely high", fastingBS = 1, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "ST", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "TA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "High risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 1, restingECG = "ST", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "TA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "ST", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "F", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 1, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Down"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "ST", maxHR = 3, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 1, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "ST", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 1, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "ST", maxHR = 1, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "TA", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Desiderable", fastingBS = 1, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 1, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 1, restingECG = "ST", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 1, restingECG = "ST", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "N", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "ST", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "TA", restingBP = "High", cholesterol = "Moderately high", fastingBS = 1, restingECG = "ST", maxHR = 2, exercise_angina = "N", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "TA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 1, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 1, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 1, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "TA", restingBP = "High", cholesterol = "Moderately high", fastingBS = 1, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Desiderable", fastingBS = 1, restingECG = "ST", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 1, restingECG = "ST", maxHR = 4, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Desiderable", fastingBS = 1, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Desiderable", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 1, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 1, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "LVH", maxHR = 1, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 1, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "ST", maxHR = 2, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Moderately high", fastingBS = 1, restingECG = "Normal", maxHR = 1, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "Normal", maxHR = 1, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 1, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 1, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 1, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 1, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "TA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "ST", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 1, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "F", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "TA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "TA", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "TA", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "TA", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 1, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Moderately high", fastingBS = 1, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ATA", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "F", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 1, restingECG = "Normal", maxHR = 1, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Desiderable", fastingBS = 1, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "TA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "TA", restingBP = "High", cholesterol = "Moderately high", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "TA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "TA", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Down"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 1, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 2, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "TA", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 1, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "NAP", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Down"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Very high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 1, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 1, restingECG = "Normal", maxHR = 4, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "F", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 1, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "High risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Down"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "TA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 1, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "High risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "TA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "F", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "Normal", maxHR = 4, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "TA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "F", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Down"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "TA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "TA", restingBP = "Very high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "TA", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Down"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "High risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 1, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "NAP", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "TA", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "TA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "TA", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "High risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 1, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "TA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "TA", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "F", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "F", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Down"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "NAP", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "F", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "High risk", st_slope = "Down"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Optimal", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Moderately high", fastingBS = 1, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "ATA", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Extremely high", fastingBS = 1, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "High risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Optimal", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Down"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Very high", cholesterol = "Desiderable", fastingBS = 1, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 2, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "TA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(n,[age = "Third", sex = "M", chest_pain_type = "TA", restingBP = "Very high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Third", sex = "F", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "ST", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Moderately high", fastingBS = 1, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Down"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "NAP", restingBP = "High", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Down"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Desiderable", fastingBS = 0, restingECG = "LVH", maxHR = 3, exercise_angina = "Y", oldpeak = "High risk", st_slope = "Up"]).
+e(y,[age = "Third", sex = "F", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Very high", cholesterol = "Desiderable", fastingBS = 1, restingECG = "LVH", maxHR = 1, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Low risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "TA", restingBP = "Optimal", cholesterol = "Extremely high", fastingBS = 0, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Third", sex = "M", chest_pain_type = "ASY", restingBP = "High", cholesterol = "Desiderable", fastingBS = 1, restingECG = "Normal", maxHR = 3, exercise_angina = "N", oldpeak = "High risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "M", chest_pain_type = "ASY", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 2, exercise_angina = "Y", oldpeak = "Normal risk", st_slope = "Flat"]).
+e(y,[age = "Second", sex = "F", chest_pain_type = "ATA", restingBP = "Normal/high", cholesterol = "Moderately high", fastingBS = 0, restingECG = "LVH", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Flat"]).
+e(n,[age = "Second", sex = "M", chest_pain_type = "NAP", restingBP = "Normal/high", cholesterol = "Desiderable", fastingBS = 0, restingECG = "Normal", maxHR = 4, exercise_angina = "N", oldpeak = "Low risk", st_slope = "Up"]).
+</div>
+
+<div class="nb-cell markdown" name="md3">
+### Librerie
+- PITA
+PITA è un sistema integrato nel cplint avente come fine quello di calcolare la probabilità di una query da un programma probabilistico espresso come LPAD. Per fare ciò il programma sottoforma di LPAD viene prima trasformato in un normale programma contenente delle chiamate ad un diagramma decisionale binario. Lo scopo è poter formare un diagramma decisionale binario che ad ogni subgoal contenga una "spiegazione" per la quale si è arrivati a quel risultato, ossia ne giustifichi la probabilità. Per poter utilizzare questo sistema è prima necessario includerlo attraverso la direttiva `:- use_module(library(pita)).`.
+- C3
+C3 è una libreria JavaScript utilizzata per il rendering di grafici inerenti ai dati utilizzati. Questo perchè i risultati numerici sono spesso più facili da capire quando vengono visualizzati come un grafico rispetto a un elenco di numeri.	 
+
+La creazione di un grafico C3 richiede l'inclusione della direttiva `:- use_rendering(c3).` e il collegamento di una variabile Prolog a un _dict_ con il _tag_ `c3` e i dati necessari a C3. Il renderer `c3` si comporta in due modi con i dati:
+
+  - se non viene specificata alcuna dimensione, la larghezza viene impostata sull'85% della larghezza disponibile
+    e l'altezza a `larghezza/2+50`. Il grafico viene ridimensionato se disponibile
+    lo spazio cambia.
+  - il renderer esegue alcuni controlli di integrità di base sui dati e può
+    segnalare un errore.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p3">
+%LIBRERIE
+:- use_module(library(pita)).
+:- use_rendering(c3).
+:- pita.
+</div>
+
+<div class="nb-cell markdown" name="md4">
+### Predicati probabilistici elementari
+
+In questa sezione sono riportati i predicati utilizzati per il calcolo delle probabilità semplici dei valori degli attributi (features) e i valori della classe. Con probabilità semplice si intende una proporzione (rapporto) tra il numero dei casi che presentano un determinato valore di un attributo/classe ed il numero totale dei casi presenti nel dataset.
+
+Per il calcolo delle probabilità semplici sono stati realizzati i seguenti predicati:
+
+- *dist_attr(+Attr,+Val,-Valori)*: è stato pensato per riconoscere l'attributo (+Attr) e di conseguenza fornire una lista (-Valori) composta da 10 variabili anonime e il valore (+Val) dell'attributo nella posizione che rispetti la formattazione degli esempi. Il predicato è dichiarato 11 volte, una per ogni attributo presente negli esempi.
+
+- *numero_persone(-N)*: che restituisce il numero totale dei casi all'interno del dataset.
+
+- *numero_val(+Attr,+Val,-N)*: che restituisce il numero dei casi in cui l'attributo Attr assume il valore Val. Per riconoscere l'attributo richiesto viene eseguito il predicato dist_attr(+Attr,+Val,-Valori).
+
+- *numero_val(+classe,+Val,-N))*: che restituisce il numero dei casi in cui la classe assume il valore Val. si nota che +classe è una costante ed è usata per distinguere il calcolo della classe invece di un attributo.
+
+- *prob_semplice(+AC,+Val):NA/N*: predicato con probabilità dove AC è l'attributo e Val è il valore che si vuole analizzare. Viene assegnata la probabilità facendo il rapporto tra il numero dei casi ottenuto con il predicato *numero_val(+AC,+Val,-NA)* e il numero totale dei casi ottenuto con *numero_persone(-N)*. Nel caso in cui si vuole calcolare la probabilità del valore della classe si richiamo il predicato usando la costante classe in AC (*prob_semplice(+classe,+Val)*).
+</div>
+
+<div class="nb-cell program" data-background="true" name="p4">
+:- begin_lpad.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Probabilità semplici %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%numero_persone(-N) 
+numero_persone(N) :-
+    findall(1, e(_,_), Campioni),
+    length(Campioni, N).
+
+%numero_attributo(+Attr,+Val,-N)
+numero_val(Attr,Val,N):- 
+    dist_attr(Attr,Val,Valori),
+	findall(1, e(_,Valori),Lista),
+	length(Lista,N).
+
+%numero_attributo(+classe,+Val,-N)
+numero_val(classe,Val,N):-
+	findall(1, e(Val,_),Lista),
+	length(Lista,N).
+
+%prob_semplice(+Att_Class,+Val)
+prob_semplice(AC,Val): NA/N:-
+	numero_val(AC,Val,NA),
+	numero_persone(N).
+
+%dist_attr(+Attr,+Val,-[Attr = Val])
+dist_attr(age, Val, [age = Val,_,_,_,_,_,_,_,_,_,_]).
+dist_attr(sex, Val, [_,sex = Val|_]).
+dist_attr(chest_pain_type, Val, [_,_,chest_pain_type = Val|_]).
+dist_attr(restingBP, Val, [_,_,_,restingBP = Val|_]).
+dist_attr(cholesterol, Val, [_,_,_,_,cholesterol = Val|_]).
+dist_attr(fastingBS, Val, [_,_,_,_,_,fastingBS = Val|_]).
+dist_attr(restingECG, Val, [_,_,_,_,_,_,restingECG = Val|_]).
+dist_attr(maxHR, Val, [_,_,_,_,_,_,_,maxHR = Val|_]).
+dist_attr(exercise_angina, Val, [_,_,_,_,_,_,_,_,exercise_angina = Val|_]).
+dist_attr(oldpeak, Val, [_,_,_,_,_,_,_,_,_,oldpeak = Val|_]).
+dist_attr(st_slope, Val, [_,_,_,_,_,_,_,_,_,_,st_slope = Val]).
+:-end_lpad.
+</div>
+
+<div class="nb-cell markdown" name="md7">
+&gt; _Qui di seguito sono presenti degli esempi illustrativi._ 
+
+Viene utilizzato il predicato built-in *prob/2* che restituisce la probabilità di un Atomo.
+
+**Esempio 1**
+Probabilità che una persona presente nel dataset sia della seconda età.
+</div>
+
+<div class="nb-cell query" name="q2">
+prob(prob_semplice(age,"Second"),P).
+</div>
+
+<div class="nb-cell markdown" name="md14">
+**Esempio 2**
+Probabilità che una persona presente nel dataset soffra di angina atipica.
+</div>
+
+<div class="nb-cell query" name="q7">
+prob(prob_semplice(chest_pain_type,"ATA"),P).
+</div>
+
+<div class="nb-cell markdown" name="md15">
+**Esempio 3**
+Probabilità che una persona presente nel dataset sia una donna.
+</div>
+
+<div class="nb-cell query" name="q8">
+prob(prob_semplice(sex,"F"),P).
+</div>
+
+<div class="nb-cell markdown" name="md8">
+**Esempio 4**
+Probabilità che una persona presente nel dataset sia sana.
+</div>
+
+<div class="nb-cell query" name="q3">
+prob(prob_semplice(classe,n),P).
+</div>
+
+<div class="nb-cell markdown" name="md13">
+**Esempio 5**
+Probabilità che una persona presente nel dataset sia malata.
+</div>
+
+<div class="nb-cell query" name="q6">
+prob(prob_semplice(classe,y),P).
+</div>
+
+<div class="nb-cell markdown" name="md6">
+### Predicati probabilistici più complessi
+Nelle sezioni sottostanti sono presenti i predicati utili a calcolare probabilità congiunte e condizionate.
+
+
+#### Probabilità congiunte
+- *congiunzione(+Salute,+Attr,+Val,-N)*: viene utilizzato per calcolare il numero (-N) di esempi che soddisfino sia la condizione di salute (+Salute) che la condizione per la quale l'attributo (+Attr) abbia valore (+Val). Per riconoscere l'attributo richiesto viene eseguito il predicato dist_attr(+Attr,+Val,-Valori).
+- *congiunzione(+Salute,+[Val1,Val2,Val3Val4,Val5,Val6,Val7,Val8,Val9,Val10,Val11],-N)*: è la versione più generale del precedente, infatti utilizzando questo predicato è possibile calcolare il numero (-N) di esempi che assumono una determinata combinazione di attributi descritti dalla lista passata come argomento della clausola. Per tutti gli attributi che non sono rilevanti nel calcolo è sufficiente utilizzare una variabile incognita.
+- *prob_congiunta(+Salute,+Attr,+Val):Con/N*: utilizzando il predicato congiunzione(+Salute,+Attr,+Val,-N1) e numero_persone(-N2) si imposta all'atomo una probabilità pari a P = N1/N2. Questa rappresenta la *probabilità congiunta* di avere la combinazione descritta nella testa.
+- *prob_congiunta(+Salute,+[Val1,Val2,Val3Val4,Val5,Val6,Val7,Val8,Val9,Val10,Val11],-N):Con/N*: funzionamento analogo al precedente, ma con la differenza che viene utilizzato il predicato più generale congiunzione(+Salute,+[Val1,Val2,Val3Val4,Val5,Val6,Val7,Val8,Val9,Val10,Val11],-N). Si è così in grado di imporre una *probabilità congiunta* di combinazioni più articolate.
+
+
+#### Probabilità condizionate
+- *prob_salute_per_val(+Salute,+Attr,+Val):PAB/PB*: con questo predicato si vuole calcolare la *probabilità condizionata*, ossia la probabilità che si abbia un determinato stato di salute (+Salute) rispetto un determinato valore (+Val) di un dato attributo (+Attr). Per il calcolo si applica la formula _P(Salute|Valore) = P(Salute ⋂ Valore)/P(Valore)_, nella quale:
+	- P(Salute ⋂ Valore), è calcolata utilizzando congiunzione(+Salute,+Attr,+Val,-PAB);
+    - P(Valore), utilizzando congiunzione(_,+Attr,+Val,-PB). 
+entrambe restituiscono un numero, non una probabilità, ma andare a dividere per il numero totale di esempi sarebbe superfluo, in quanto si otterrebbe una cancellazione del termine.
+- *prob_salute_per_val(+Salute,+[Val1,Val2,Val3Val4,Val5,Val6,Val7,Val8,Val9,Val10,Val11]):PAB/PB*: versione più generica del suo omonimo. Consente di calcolare la *probabilità condizionata* con una combinazione di valori più articolata. Il calcolo viene effettuato seguendo una logica analoga al caso precedente, ed il risultato che si ottiene è anche stavolta posto nella testa.
+- *prob_salute_per_val(_,_,_):0*: se la combinazione degli eventi nella testa non è compatibile, o gli eventi sono disgiunti la *probabilità condizionata* è nulla.
+- *teo_bayes(+Attr,+Val,+Salute,-PAB)*: con questo predicato si vuole calcolare la *probabilità condizionata* nel verso opposto dei precedenti predicati, ovvero la probabilità di avere un certo valore (+Val) di un attributo (+Attr), sapendo a priori lo stato di salute (+Salute). Il risultato viene calcolato applicando il teorema di Bayes: 
+_P(Val|Salute) = P(Salute|Val)*P(Val)/P(Salute)_. 
+
+Nello specifico si ha:
+	- P(Salute|Val), ottenuto prelevando la probabilità nella testa di prob_salute_per_val(+Salute,+Attr,+Val);
+    - P(Val), ottenuto dalla probabilità nella testa di prob_congiunta(_,+Attr,+Val);
+    - P(Salute),  ottenuto dalla probabilità nella testa di prob_congiunta(+Salute,_). 
+Come ultima cosa viene effettuato il calcolo numerico e si restituisce il risultato in (-PAB)
+- *teo_bayes(+[Val1,Val2,Val3,Val4,Val5,Val6,Val7,Val8,Val9,Val10,Val11],+Salute,-PAB)*: costruito per ottenere la *probabilità condizionata* di avere una determinata combinazione di valori contenuta nella lista della testa, conoscendo lo stato di salute (+Salute).
+</div>
+
+<div class="nb-cell program" data-background="true" name="p2">
+:- begin_lpad.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Probabilità Congiunte %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% congiunzione(+Salute,+Attr,+Val,-N):
+congiunzione(Salute,Attr,Val,N):- 
+    dist_attr(Attr,Val,Valori),         % lista di coppie (Attr = Val) con Attr nella posizione che rispetti la formattazione degli esempi e le restanti coppie anonime.
+	findall(1, e(Salute,Valori),Lista), % trovo gli esempi che soddisfano la coppia (Attr = Val)
+	length(Lista,N).					% conta il numero di esempi
+
+% caso generale
+% congiunzione(+Salute,+[Val1,Val2,...,Val11],-N)
+congiunzione(Salute,[Val1,Val2,Val3,Val4,Val5,Val6,Val7,Val8,Val9,Val10,Val11],N):- 
+    findall(1, e(Salute,[age = Val1, sex = Val2, chest_pain_type = Val3, restingBP = Val4, cholesterol = Val5, fastingBS = Val6, restingECG = Val7, maxHR = Val8, exercise_angina = Val9, oldpeak = Val10,st_slope = Val11]),Lista),
+	length(Lista,N).
+
+
+% P(Salute ⋂ Valore)
+% prob_congiunta(+Salute,+Attr,+Val)
+prob_congiunta(Salute,Attr,Val): Con/N:-
+	congiunzione(Salute,Attr,Val,Con),   %numero esempi che soddisfano Salute e (Attr = Val)
+	numero_persone(N).					 %numero totale esempi
+
+% caso generale
+% prob_congiunta(+Salute,+[Val1,Val2,...,Val11])
+prob_congiunta(Salute,[Val1,Val2,Val3,Val4,Val5,Val6,Val7,Val8,Val9,Val10,Val11]): Con/N:-
+	congiunzione(Salute,[Val1,Val2,Val3,Val4,Val5,Val6,Val7,Val8,Val9,Val10,Val11],Con), 	%numero esempi che soddisfano Salute e [Attr1 = Val1, Attr2 = Val2, ...])
+	numero_persone(N).																	 	%numero totale esempi
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Probabilità Condizionate %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%P(Salute|Valore) = P(Salute ⋂ Valore)/P(Valore)
+% prob_salute_per_val(+Salute,+Attr,+Val)
+prob_salute_per_val(Salute,Attr,Val): PAB/PB:- 
+	congiunzione(Salute,Attr,Val,PAB),			% numero esempi che soddisfano Salute e (Attr = Val)
+   	congiunzione(_,Attr,Val,PB),				% numero esempi che soddisfano (Attr = Val)
+    PB &gt; 0.										% condizione per denominatore diverso da zero
+
+
+% prob_salute_per_val(+Salute,+[Val1,Val2,...,Val11])
+prob_salute_per_val(Salute,[Val1,Val2,Val3,Val4,Val5,Val6,Val7,Val8,Val9,Val10,Val11]): PAB/PB:-
+	congiunzione(Salute,[Val1,Val2,Val3,Val4,Val5,Val6,Val7,Val8,Val9,Val10,Val11],PAB),
+   	congiunzione(_,[Val1,Val2,Val3,Val4,Val5,Val6,Val7,Val8,Val9,Val10,Val11],PB),
+    PB &gt; 0.
+
+%caso in cui il divisore è 0
+prob_salute_per_val(_,_,_): 0.
+
+:- end_lpad.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%% TEOREMA DI BAYES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%P(Val|Salute) = P(Salute|Val)*P(Val)/P(Salute)
+%teo_bayes(+Attr,+Val,+Salute,-P)
+teo_bayes(Attr,Val,Salute,PAB):-
+    prob(prob_salute_per_val(Salute,Attr,Val),PBA),			%P(Salute|Val) = P(Salute ⋂ Val)/P(Val)
+    prob(prob_congiunta(_,Attr,Val),PA),					%P(Val)
+    prob(prob_congiunta(Salute,_),PB),						%P(Salute)
+    PAB is (PBA*PA)/PB.										%P(Val|Salute) = P(Salute|Val)*P(Val)/P(Salute)
+
+%teo_bayes(+[Val1,Val2,Val3,Val4,Val5,Val6,Val7,Val8,Val9,Val10,Val11],+Salute,-P)
+teo_bayes([Val1,Val2,Val3,Val4,Val5,Val6,Val7,Val8,Val9,Val10,Val11],Salute,PAB):-
+    prob(prob_salute_per_val(Salute,[Val1,Val2,Val3,Val4,Val5,Val6,Val7,Val8,Val9,Val10,Val11]),PBA), 	%P(Salute|Valori) = P(Salute ⋂ Val1 ⋂ Val2 ...)/P(Valori)
+    prob(prob_congiunta(_,[Val1,Val2,Val3,Val4,Val5,Val6,Val7,Val8,Val9,Val10,Val11]),PA), 				%P(Val1 ⋂ Val2 ⋂ ...)
+    prob(prob_congiunta(Salute,_),PB),																	%P(Salute)
+    PAB is (PBA*PA)/PB.																					%P(Val1⋂ Val2⋂ ...|Salute) = P(Salute|Val1⋂ Val2⋂ ...)*P(Val1⋂ Val2⋂ ...)/P(Salute)
+</div>
+
+<div class="nb-cell markdown" name="md16">
+&gt; _Qui di seguito sono presenti degli esempi illustrativi._ 
+
+**Esempio 1**
+ - _Probabilità congiunta_ che una persona presente nel dataset sia malata e che abbia una valore di colesterolo estremamente alto.
+ - _Probabilità condizionata_ che una persona presente nel dataset sia malata sapendo che ha un valore di colesterolo estremamente alto.
+ - _Probabilità condizionata_ che una persona presente nel dataset abbia un valore di colesterolo estremamente alto sapendo che è malata.
+</div>
+
+<div class="nb-cell query" data-tabled="true" name="q9">
+prob(prob_congiunta(y,cholesterol,"Extremely high"),P_A_and_B),
+prob(prob_salute_per_val(y,cholesterol,"Extremely high"),P_A_cond_B),
+teo_bayes(cholesterol,"Extremely high",y,P_B_cond_A).
+</div>
+
+<div class="nb-cell markdown" name="md17">
+**Esempio 2**
+- _Probabilità congiunta_, che una persona con problemi cardiaci presente nel dataset, abbia i seguenti parametri: 
+	- uomo (sex = "M");
+    - della seconda età (age = "Second");
+    - segmento ST di picco senza alcuna pendenza (st_slope = "Flat); 
+    - risultati dell'elettrocardiogramma a riposo normali (restingECG = "Normal").
+- _Probabilità condizionata_, che una persona presente nel dataset sia malato, sapendo che ha i seguenti parametri:
+	- uomo (sex = "M");
+    - della seconda età (age = "Second");
+    - segmento ST di picco senza alcuna pendenza (st_slope = "Flat); 
+    - risultati dell'elettrocardiogramma a riposo normali (restingECG = "Normal").
+- _Probabilità condizionata_, che una persona presente nel dataset di cui si conosce lo stato di salute (in questo caso malato), possieda i seguenti parametri:
+	- uomo (sex = "M");
+    - della seconda età (age = "Second");
+    - segmento ST di picco senza alcuna pendenza (st_slope = "Flat); 
+    - risultati dell'elettrocardiogramma a riposo normali (restingECG = "Normal").
+</div>
+
+<div class="nb-cell query" data-tabled="true" name="q10">
+prob(prob_congiunta(y,["Second","M",_,_,_,_,"Normal",_,_,_,"Flat"]),P_A_and_B_and_C_and_D_and_E),
+prob(prob_salute_per_val(y,["Second","M",_,_,_,_,"Normal",_,_,_,"Flat"]),P_A_cond_B_and_C_and_D_and_E),
+teo_bayes(["Second","M",_,_,_,_,"Normal",_,_,_,"Flat"],y,P_B_and_C_and_D_and_E_cond_A).
+</div>
+
+<div class="nb-cell markdown" name="md10">
+### Grafici
+L'ultima sezione del notebook è dedicata alla rappresentazione grafica delle probabilità calcolate in precedenza. Si è fatto uso della libreria C3, sopra citata, per poter renderizzare un istogramma. Nello specifico è stato costruito un grafico per ogni attributo del dataset, nel quale sono state riportate le probabilità di avere un'insufficienza cardiaca per ogni valore che può assumere un determinato attributo. Ovviamente questo valore è stato messo a confronto graficamente con la sua controparte, ossia con la probabilità di NON avere un'insufficienza cardiaca per gli stessi valori dello stesso attributo calcolato prima.
+
+
+Il predicato che si occupa di richiamare direttamente la libreria C3 è *grafico(+Attr,-Chart)* che definisce il layout dell'istogramma nel quale poi vengono immessi i valori probabilistici calcolati. Questi valori numerici, corrispondenti alle probabilità sopra citate, sono stati ottenuti sviluppando il predicato *calcolo_hist(+Salute,+Attr,+Valori,+Traccia,-TracciaF)*, il quale ricorsivamente per ogni attributo, va a calcolare la probabilità condizionata di ogni valore.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p5">
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   ISTOGRAMMA   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% grafico(+Attr,-Chart)
+grafico(Attr,Chart):-
+    a(Attr,Valori),                            % trova i valori dell'Attributo
+    calcolo_hist(y,Attr,Valori,[],Traccia1),   % mette in Traccia1 le probabilità condizionate dei valori dell'attributo con la classe y
+    calcolo_hist(n,Attr,Valori,[],Traccia2),   % mette in Traccia1 le probabilità condizionate dei valori dell'attributo con la classe n
+	Chart = c3{data:_{x:x, columns:[[x|Valori],[malato|Traccia1],[sano|Traccia2]], type:bar}, % crea il grafico
+	axis:_{x:_{type:category}}}.
+
+% calcolo_hist(+Salute,+Attr,+[Valori],+[],-TracciaF)
+calcolo_hist(_,_,[],Traccia,Traccia):-!.                 
+calcolo_hist(Salute,Attr,[T|C],Traccia,TracciaF):-
+    prob(prob_salute_per_val(Salute,Attr,T), P),       	% calcola la probabilità condizionata P(Salute ⋂ T)
+    append(Traccia,[P],Traccia1),						% appende alla lista Traccia la probabilità P
+    calcolo_hist(Salute,Attr,C,Traccia1,TracciaF).		% ricorsione
+</div>
+
+<div class="nb-cell markdown" name="md9">
+&gt; Qualche istogramma qui di seguito.
+</div>
+
+<div class="nb-cell query" name="q1">
+grafico(age,Grafico_Età).
+</div>
+
+<div class="nb-cell query" name="q5">
+grafico(sex,Grafico_Sesso).
+</div>
+
+<div class="nb-cell query" data-tabled="true" name="q4">
+grafico(chest_pain_type,Grafico_Chest_pain_type).
+</div>
+
+<div class="nb-cell query" data-tabled="true" name="q11">
+grafico(restingBP,Grafico_RestingBP).
+</div>
+
+<div class="nb-cell query" data-tabled="true" name="q12">
+grafico(cholesterol,Grafico_Colesterolo).
+</div>
+
+<div class="nb-cell query" data-tabled="true" name="q13">
+grafico(fastingBS,Grafico_FastingBS).
+</div>
+
+<div class="nb-cell query" data-tabled="true" name="q14">
+grafico(restingECG,Grafico_RestingECG).
+</div>
+
+<div class="nb-cell query" data-tabled="true" name="q15">
+grafico(maxHR,Grafico_MaxHR).
+</div>
+
+<div class="nb-cell query" data-tabled="true" name="q18">
+grafico(exercise_angina,Grafico_Exercise_angina).
+</div>
+
+<div class="nb-cell query" data-tabled="true" name="q19">
+grafico(oldpeak,Grafico_Oldpeak).
+</div>
+
+<div class="nb-cell query" data-tabled="true" name="q20">
+grafico(st_slope,Grafico_St_slope).
+</div>
+
+</div>

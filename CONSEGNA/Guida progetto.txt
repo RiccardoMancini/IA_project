@@ -22,15 +22,19 @@
  		- Heart_failure_Tree_Induction (SWI-Prolog).pl: programma prolog per la classificazione mediante albero di decisione.
 
 - Breve guida all'apertura del programma cplint:
-	1) al link http://cplint.lamping.unife.it/ selezionare Create a 'Program' here
-	2) cancellare il contenuto del nuovo programma creato
-	3) copiare e incollare il contenuto del file di testo 'Heart_failure_Tree_induction (cplint).txt'
+	- accessibile al link: http://cplint.lamping.unife.it/p/Heart_failure_dataset_probabilistic_analysis.swinb
+	- altrimenti eseguire questi passaggi:
+		1) al link http://cplint.lamping.unife.it/ selezionare Create a 'Program' here
+		2) cancellare il contenuto del nuovo programma creato
+		3) copiare e incollare il contenuto del file di testo 'Heart_failure_Tree_induction (cplint).txt'
 
 
 
 - Breve guida all'apertura del notebook:
-	1) al link http://cplint.lamping.unife.it/ selezionare Create a 'Notebook' here
-	2) premere sul tasto '+' (insert cell below)
-	3) premere su 'more'
-	4) premere su 'scegli file'
-	5) selezionare 'Heart_failure_dataset_probabilistic_analysis.swinb' dalla cartella locale.
+	- accessibile al link: http://cplint.lamping.unife.it/p/Heart_failure_dataset_probabilistic_analysis.swinb
+	- altrimenti eseguire questi passaggi:
+		1) al link http://cplint.lamping.unife.it/ selezionare Create a 'Notebook' here
+		2) premere sul tasto '+' (insert cell below)
+		3) premere su 'more'
+		4) premere su 'scegli file'
+		5) selezionare 'Heart_failure_dataset_probabilistic_analysis.swinb' dalla cartella locale.

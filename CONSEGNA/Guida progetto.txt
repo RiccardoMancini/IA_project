@@ -1,0 +1,5 @@
+
+- Breve spiegazione su cosa contiene la cartella del progetto(?)
+
+
+- Breve guida all'apertura del notebook

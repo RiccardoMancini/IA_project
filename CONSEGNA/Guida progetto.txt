@@ -1,5 +1,36 @@
 
-- Breve spiegazione su cosa contiene la cartella del progetto(?)
+- Contenuto:
+
+	0) Manipolazione dataset (Python):
+		- heart.csv: file .csv del dataset scaricato al link https://www.kaggle.com/datasets/fedesoriano/heart-failure-prediction
+		- heart_splittato.csv: file .csv in cui sono state splittate le colonne del dataset.
+		- main.py: script python usat per creare:
+			- il dataset completo in prolog (CONSEGNA\2) Tree induction (entropia di Shannon)\db_heart(COMPLETO))
+			- il dataset degli attributi (CONSEGNA\2) Tree induction (entropia di Shannon)\db_heart_attributes)
+			- il testset (CONSEGNA\2) Tree induction (entropia di Shannon)\db_heart_test)
+			- il trainingset (CONSEGNA\2) Tree induction (entropia di Shannon)\db_heart_training.pl)
+			
+	1) Valutazioni probabilistiche (cplint):
+		- Heart_failure_dataset_probabilistic_analysis.swinb: Notebook cplint in cui vengono riportate le valutazioni probabilistiche effettuate sul dataset
+
+	2) Tree induction (entropia di Shannon):
+		- db_heart(COMPLETO).pl: dataset completo in prolog
+		- db_heart_attributes.pl: dataset degli attributi in prolog
+		- db_heart_test.pl: testset usato per l'induzione dell'albero in prolog (85% del dataset)
+		- db_heart_training.pl: traingingset usato per l'induzione dell'albero in prolog (15% del dataset)
+		- Heart_failure_Tree_induction (cplint).txt: programma cplint per la classificazione mediante albero di decisione. 
+ 		- Heart_failure_Tree_Induction (SWI-Prolog).pl: programma prolog per la classificazione mediante albero di decisione.
+
+- Breve guida all'apertura del programma cplint:
+	1) al link http://cplint.lamping.unife.it/ selezionare Create a 'Program' here
+	2) cancellare il contenuto del nuovo programma creato
+	3) copiare e incollare il contenuto del file di testo 'Heart_failure_Tree_induction (cplint).txt'
 
 
-- Breve guida all'apertura del notebook
+
+- Breve guida all'apertura del notebook:
+	1) al link http://cplint.lamping.unife.it/ selezionare Create a 'Notebook' here
+	2) premere sul tasto '+' (insert cell below)
+	3) premere su 'more'
+	4) premere su 'scegli file'
+	5) selezionare 'Heart_failure_dataset_probabilistic_analysis.swinb' dalla cartella locale.

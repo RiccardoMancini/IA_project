@@ -185,23 +185,15 @@ matrice_confusione :-
 	valuta(Albero,TestSet,VN,0,VP,0,FN,0,FP,0,NC,0),!,
 	A is (VP + VN) / (N - NC), % Accuratezza
 	E is 1 - A,		   % Errore
-	writeln(''),
-	write('Test effettuati:\t'),  writeln(N),
-	write('Test non classificati:\t'),  writeln(NC),
-	writeln(''),
-	writeln('\t\t   +----------------------------+'),
-	writeln('\t\t   |\t   CLASSE STIMATA\t|'),
-	writeln('\t\t   +------------+---------------+'),
-	writeln('\t\t   |  Negativo\t|  Positivo\t|'),
-	writeln('+-------+----------+------------+---------------+'),
-	write('|CLASSE\t| Negativo |\t '),write(VN),write('\t|\t'),write(FP),writeln('\t|'),
-	writeln('|\t+----------+------------+---------------+'),
-	write('|REALE\t| Positivo |\t '),write(FN),write('\t|\t'),write(VP),writeln('\t|'),
-	writeln('+-------+----------+------------+---------------+'),
-	writeln(''),
-	write('Accuratezza:\t'), writeln(A),
-	write('Errore:\t\t'), writeln(E),
-	writeln('').
+	write('Test effettuati :'),  writeln(N),
+	write('Test non classificati :'),  writeln(NC),
+	writeln(' + - - - - - - - - - - - + - - - - - - - - - - - +'),
+	write(' | Veri Negativi  '), write(VN), write(' |  Falsi Positivi '), write(FP),writeln(' |'),
+	writeln(' + - - - - - - - - - - - + - - - - - - - - - - - +'),
+	write(' | Falsi Negativi '), write(FN), write(' |  Veri Positivi  '), write(VP),writeln(' |'),
+    writeln(' + - - - - - - - - - - - + - - - - - - - - - - - +'),
+	write('Accuratezza: '), writeln(A),
+	write('Errore: '), writeln(E).
 
 
 

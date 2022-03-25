@@ -32,7 +32,7 @@
 
 
 - BREVE GUIDA PER L'APERTURA DEL PROGRAMMA DI APPRENDIMENTO IN CPLINT:
-	- accessibile al link: http://cplint.lamping.unife.it/p/Heart_failure_dataset_probabilistic_analysis.swinb
+	- accessibile al link: http://cplint.lamping.unife.it/p/Heart_failure_Tree_induction.pl
 	- altrimenti eseguire questi passaggi:
 		1) al link http://cplint.lamping.unife.it/ selezionare Create a 'Program' here
 		2) cancellare il contenuto del nuovo programma creato

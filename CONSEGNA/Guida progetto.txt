@@ -1,6 +1,4 @@
-
-- Contenuto:
-
+- CONTENUTO DELLE CARTELLE DI PROGETTO:
 	0) Manipolazione dataset (Python):
 		- heart.csv: file .csv del dataset scaricato al link https://www.kaggle.com/datasets/fedesoriano/heart-failure-prediction
 		- heart_splittato.csv: file .csv in cui sono state splittate le colonne del dataset.
@@ -11,7 +9,8 @@
 			- il trainingset (CONSEGNA\2) Tree induction (entropia di Shannon)\db_heart_training.pl)
 			
 	1) Valutazioni probabilistiche (cplint):
-		- Heart_failure_dataset_probabilistic_analysis.swinb: Notebook cplint in cui vengono riportate le valutazioni probabilistiche effettuate sul dataset
+		- Heart_failure_dataset_probabilistic_analysis.swinb: Notebook cplint in cui vengono riportate le valutazioni probabilistiche
+		  effettuate sul dataset
 
 	2) Tree induction (entropia di Shannon):
 		- db_heart(COMPLETO).pl: dataset completo in prolog
@@ -21,7 +20,18 @@
 		- Heart_failure_Tree_induction (cplint).txt: programma cplint per la classificazione mediante albero di decisione. 
  		- Heart_failure_Tree_Induction (SWI-Prolog).pl: programma prolog per la classificazione mediante albero di decisione.
 
-- Breve guida all'apertura del programma cplint:
+
+- BREVE GUIDA PER L'APERTURA DEL NOTEBOOK:
+	- accessibile al link: http://cplint.lamping.unife.it/p/Heart_failure_dataset_probabilistic_analysis.swinb
+	- altrimenti eseguire questi passaggi:
+		1) al link http://cplint.lamping.unife.it/ selezionare Create a 'Notebook' here
+		2) premere sul tasto '+' (insert cell below)
+		3) premere su 'more'
+		4) premere su 'scegli file'
+		5) selezionare 'Heart_failure_dataset_probabilistic_analysis.swinb' dalla cartella locale.
+
+
+- BREVE GUIDA PER L'APERTURA DEL PROGRAMMA DI APPRENDIMENTO IN CPLINT:
 	- accessibile al link: http://cplint.lamping.unife.it/p/Heart_failure_dataset_probabilistic_analysis.swinb
 	- altrimenti eseguire questi passaggi:
 		1) al link http://cplint.lamping.unife.it/ selezionare Create a 'Program' here
@@ -30,11 +40,3 @@
 
 
 
-- Breve guida all'apertura del notebook:
-	- accessibile al link: http://cplint.lamping.unife.it/p/Heart_failure_dataset_probabilistic_analysis.swinb
-	- altrimenti eseguire questi passaggi:
-		1) al link http://cplint.lamping.unife.it/ selezionare Create a 'Notebook' here
-		2) premere sul tasto '+' (insert cell below)
-		3) premere su 'more'
-		4) premere su 'scegli file'
-		5) selezionare 'Heart_failure_dataset_probabilistic_analysis.swinb' dalla cartella locale.

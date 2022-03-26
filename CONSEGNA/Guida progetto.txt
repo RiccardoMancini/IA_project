@@ -19,7 +19,8 @@
 		- db_heart_training.pl: traingingset usato per l'induzione dell'albero in prolog (15% del dataset)
 		- Heart_failure_Tree_induction (cplint).txt: programma cplint per la classificazione mediante albero di decisione. 
  		- Heart_failure_Tree_Induction (SWI-Prolog).pl: programma prolog per la classificazione mediante albero di decisione.
-
+	
+	3) Relazione del progetto in formato "IEEETran" (PDF)
 
 - BREVE GUIDA PER L'APERTURA DEL NOTEBOOK:
 	- accessibile al link: http://cplint.lamping.unife.it/p/Heart_failure_dataset_probabilistic_analysis.swinb
